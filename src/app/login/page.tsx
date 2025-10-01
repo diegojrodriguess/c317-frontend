@@ -2,15 +2,24 @@
 
 import { useState } from "react";
 import styles from "./page.module.css";
+import { useRouter } from "next/navigation";
+import AuthService from "@/services/AuthService";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
-  const [senha, setSenha] = useState("");
+  const [password, setPassword] = useState("");
+  const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implementar lógica de autenticação
-    console.log("Tentando logar com:", { email, senha });
+    try {
+      const data = await AuthService.login(email, password);
+
+      localStorage.setItem("token", data.access_token);
+      router.push("/dashboard");
+    } catch (error) {
+      console.error("Erro ao logar:", error);
+    }
   };
 
   return (
@@ -46,9 +55,9 @@ export default function LoginPage() {
           />
           <input
             type="password"
-            placeholder="Senha"
-            value={senha}
-            onChange={(e) => setSenha(e.target.value)}
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             className={styles.input}
             required
           />

@@ -1,25 +1,28 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
+import AuthService from "@/services/AuthService";
 
 export default function RegisterPage() {
-  const [nome, setNome] = useState("");
-  const [idade, setIdade] = useState("");
+  const [name, setName] = useState("");
+  const [age, setAge] = useState("");
   const [email, setEmail] = useState("");
-  const [senha, setSenha] = useState("");
-  const [confirmarSenha, setConfirmarSenha] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmarPassword] = useState("");
+  const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    //TODO: Implementar lógica de registro
-    console.log("Tentando registrar:", {
-      nome,
-      idade,
-      email,
-      senha,
-      confirmarSenha,
-    });
+    try {
+      const data = await AuthService.register(name, age, email, password);
+
+      localStorage.setItem("token", data.access_token);
+      router.push("/dashboard");
+    } catch (error) {
+      console.error("Erro ao registrar:", error);
+    }
   };
 
   return (
@@ -48,16 +51,16 @@ export default function RegisterPage() {
           <input
             type="text"
             placeholder="Nome e sobrenome"
-            value={nome}
-            onChange={(e) => setNome(e.target.value)}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
             className={styles.input}
             required
           />
           <input
             type="number"
             placeholder="Idade"
-            value={idade}
-            onChange={(e) => setIdade(e.target.value)}
+            value={age}
+            onChange={(e) => setAge(e.target.value)}
             className={styles.input}
             required
           />
@@ -72,16 +75,16 @@ export default function RegisterPage() {
           <input
             type="password"
             placeholder="Senha"
-            value={senha}
-            onChange={(e) => setSenha(e.target.value)}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             className={styles.input}
             required
           />
           <input
             type="password"
             placeholder="Confirme a senha"
-            value={confirmarSenha}
-            onChange={(e) => setConfirmarSenha(e.target.value)}
+            value={confirmPassword}
+            onChange={(e) => setConfirmarPassword(e.target.value)}
             className={styles.input}
             required
           />
