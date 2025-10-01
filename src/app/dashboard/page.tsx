@@ -2,50 +2,64 @@
 
 import styles from "./page.module.css";
 import { FaUserCircle, FaHeart } from "react-icons/fa";
+import RouteGuard from "@/components/RouteGuard";
+import { useRouter } from "next/navigation";
 
 export default function Dashboard() {
-  return (
-    <div className={styles.container}>
-      {/* Header */}
-      <header className={styles.header}>
-        <div className={styles.welcome}>
-          <h2>Bem Vindo</h2>
-          <p className={styles.username}>Xxxxxxxxxxx.</p>
-        </div>
-        <div className={styles.avatar}>
-          <FaUserCircle size={70} color="#fff" />
-        </div>
-      </header>
+  const router = useRouter();
 
-      {/* Cards */}
-      <main className={styles.main}>
-        <div className={styles.grid}>
-          <div className={styles.card}>
-            <FaHeart size={28} />
-            <p>Leitura Rápida / Fluência Verbal</p>
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    router.push("/login");
+  };
+
+  return (
+    <RouteGuard>
+      <div className={styles.container}>
+        {/* Header */}
+        <header className={styles.header}>
+          <div className={styles.welcome}>
+            <h2>Bem Vindo</h2>
+            <p className={styles.username}>Xxxxxxxxxxx.</p>
           </div>
-          <div className={styles.card}>
-            <FaHeart size={28} />
-            <p>Repetição de Fonemas e Pares Mínimos</p>
+          <button onClick={handleLogout} className={styles.logoutButton}>
+            Logout
+          </button>
+          <div className={styles.avatar}>
+            <FaUserCircle size={70} color="#fff" />
           </div>
-          <div className={styles.card}>
-            <FaHeart size={28} />
-            <p>Leitura de Palavras e Pseudopalavras</p>
+        </header>
+
+        {/* Cards */}
+        <main className={styles.main}>
+          <div className={styles.grid}>
+            <div className={styles.card}>
+              <FaHeart size={28} />
+              <p>Leitura Rápida / Fluência Verbal</p>
+            </div>
+            <div className={styles.card}>
+              <FaHeart size={28} />
+              <p>Repetição de Fonemas e Pares Mínimos</p>
+            </div>
+            <div className={styles.card}>
+              <FaHeart size={28} />
+              <p>Leitura de Palavras e Pseudopalavras</p>
+            </div>
+            <div className={styles.card}>
+              <FaHeart size={28} />
+              <p>Teste de Nomeação de Figuras</p>
+            </div>
+            <div className={styles.card}>
+              <FaHeart size={28} />
+              <p>Frases Curtas de Repetição / Leitura</p>
+            </div>
+            <div className={styles.card}>
+              <FaHeart size={28} />
+              <p>Repetição de Sílabas e Trava-línguas</p>
+            </div>
           </div>
-          <div className={styles.card}>
-            <FaHeart size={28} />
-            <p>Teste de Nomeação de Figuras</p>
-          </div>
-          <div className={styles.card}>
-            <FaHeart size={28} />
-            <p>Frases Curtas de Repetição / Leitura</p>
-          </div>
-          <div className={styles.card}>
-            <FaHeart size={28} />
-            <p>Repetição de Sílabas e Trava-línguas</p>
-          </div>
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
+    </RouteGuard>
   );
 }
