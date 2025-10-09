@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import styles from "./page.module.css";
 
 export default function HomePage() {
@@ -96,6 +97,16 @@ export default function HomePage() {
 
 
       <main className={styles.content}>
+        <div className={styles.hero}>
+          <Image
+            src="/images/foto_fono_homepage.jpg"
+            alt="Fonoaudióloga orientando paciente durante sessão"
+            fill          // preenche o container .hero
+            priority      // carrega mais rápido por estar no topo
+            sizes="(min-width: 1024px) 900px, 100vw"
+            className={styles.heroImg}
+          />
+        </div>
         <h2 className={styles.title}>Veja Sua Evolução Em Uma Semana</h2>
         <p className={styles.text}>
           Espaço para texto, cards e imagens...

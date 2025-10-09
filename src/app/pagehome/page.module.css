@@ -88,7 +88,7 @@
   transition: transform 0.2s ease;
 }
 
-/* 🔹 efeito ao passar o mouse (opcional) */
+/* 🔹 efeito ao passar o mouse */
 .card:hover {
   transform: translateY(-5px);
 }
@@ -118,6 +118,10 @@
   background: white;
   color: #222;
   padding: 2rem;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;    /* centraliza a .hero */
 }
 
 .title {
@@ -127,4 +131,20 @@
 
 .text {
   line-height: 1.4;
+}
+
+.hero {
+  position: relative;
+  width: 100%;
+  max-width: 1000px;  /* deixa a foto “grande” sem estourar */
+  aspect-ratio: 16 / 9;  /* altura responsiva; mude p/ 4/3 se preferir */
+  margin-top: 1rem;
+  border-radius: 20px;
+  overflow: hidden;      /* para o border-radius cortar a imagem */
+  box-shadow: 0 6px 22px rgba(0,0,0,0.12);
+}
+
+/* imagem preenchendo o container com corte elegante */
+.heroImg {
+  object-fit: cover;
 }
