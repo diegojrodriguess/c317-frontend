@@ -1,9 +1,11 @@
+
 {
   "name": "c317-frontend",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "PORT=3001 next dev --turbopack",
+    
+    "dev": "next dev -p 3001 --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint"

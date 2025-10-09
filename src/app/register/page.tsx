@@ -60,7 +60,12 @@ export default function RegisterPage() {
             type="number"
             placeholder="Idade"
             value={age}
-            onChange={(e) => setAge(e.target.value)}
+            onChange={(e) => {
+              const value = Number(e.target.value);
+              if (value >= 0 || e.target.value === "") {
+                setAge(e.target.value);
+              }
+            }}
             className={styles.input}
             required
           />

@@ -1,0 +1,130 @@
+.container {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Parte verde */
+
+.iconWrapper svg { width: 56px; height: 56px; /* mantendo tudo do mesmo tamanho */
+
+} 
+
+.highlight {
+  color: #A8C030;
+  font-weight: 700; /* opcional: reforça o destaque */
+}
+
+.star {
+  color: white;
+  margin-right: 8px;
+  font-size: 1.2em; /* ajuste conforme o tamanho do texto */
+}
+
+.sidebar {
+  width: 30%;
+  background-color: #143d3b;
+  color: white;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.logo {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+}
+
+.headline {
+  font-size: 2.4rem;
+  line-height: 1.3;
+  font-weight: 500;
+  color: #f4f4f4;
+  text-align: left;
+  margin-bottom: 0.8rem;
+}
+
+.highlight {
+  color: #A8C030;
+  font-weight: 700;
+}
+
+.subheadline {
+  font-size: 1.2rem;
+  color: #CBCBCB;
+  text-align: left;
+  margin-top: 0.5rem;
+  margin-bottom: 3rem;
+}
+
+.offer {
+  font-size: 1.4rem;
+  color: #A8C030;
+  font-weight: 700;
+  text-align: left;
+  margin-bottom: 1.2rem;
+}
+
+/* 🔹 Container dos 3 quadrados */
+.cardsContainer {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+/* 🔹 Cada quadrado */
+.card {
+  flex: 1;
+  height: 140px;
+  background-color: #F0F0D8;
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+/* 🔹 efeito ao passar o mouse (opcional) */
+.card:hover {
+  transform: translateY(-5px);
+}
+
+.iconWrapper {
+  margin-bottom: 10px;
+}
+
+.cardText {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+  text-align: center;
+  max-width: 80%;
+}
+
+
+
+.footer {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+/* Parte branca */
+.content {
+  flex: 1;
+  background: white;
+  color: #222;
+  padding: 2rem;
+}
+
+.title {
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+}
+
+.text {
+  line-height: 1.4;
+}
