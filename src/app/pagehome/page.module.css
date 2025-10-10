@@ -112,6 +112,33 @@
   opacity: 0.7;
 }
 
+/* botão “Começar” */
+.ctaButton {
+  margin-top: 1rem;
+  margin-left: 31%;
+  background: #F0F0D8;
+  color: #143d3b;           /* contraste com o fundo verde */
+  border: 0;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0,0,0,.12);
+  transition: transform .15s ease, box-shadow .15s ease;
+  width: 25%;
+  text-align: center;
+  min-width: 170px;
+  min-height: 40px;
+  
+  
+}
+.ctaButton:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,0,0,.18); }
+.ctaButton:focus { outline: 2px solid #A8C030; outline-offset: 2px; }
+.ctaButton:active { transform: translateY(0); }
+
+
+
 /* Parte branca */
 .content {
   flex: 1;
@@ -121,7 +148,7 @@
 
   display: flex;
   flex-direction: column;
-  align-items: center;    /* centraliza a .hero */
+  align-items: center;
 }
 
 .title {
@@ -147,4 +174,231 @@
 /* imagem preenchendo o container com corte elegante */
 .heroImg {
   object-fit: cover;
+}
+
+.impactsubtitle {
+  margin-top: 2.5rem;
+  font-size: 2rem;
+  color: #143d3b;
+  text-align: left;
+  margin-top: 0.5rem;
+  margin-bottom: 3rem;
+}
+
+.impact {
+  font-size: 1.2rem;
+  margin-top: 2.5rem;
+  text-align: center;
+  
+  line-height: 1.2;
+  letter-spacing: 0.3px;
+  color: #143d3b; /* combina com a barra verde */
+  /* responsivo: grande em desktop, confortável no mobile */
+  font-size: clamp(2rem, 4vw + 0.5rem, 3.2rem);
+  max-width: 1000px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.featureGrid {
+  width: 100%;
+  align-self: stretch;          /* ocupa toda a largura da coluna branca */
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 1rem;
+  margin-top: 1.25rem;
+
+  /* faz a grade “empurrar” e preencher o espaço disponível */
+  flex: 1;                      /* ocupa o restante da altura da .content */
+  min-height: 50vh;             /* ajuste se quiser mais/menos altura mínima */
+}
+
+/* cada quadrado */
+.tile {
+  background: #BFD65E;
+  border-radius: 16px;          /* se preferir sem arredondar, remova */
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+/* conteúdo interno do tile 1 */
+.tileContent {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;     /* centraliza horizontal */
+  justify-content: center; /* centraliza vertical */
+  padding: 1rem;
+  text-align: center;
+}
+
+.tileStat {
+  font-weight: 800;
+  line-height: 1;
+  color: #143d3b;              /* contraste forte sobre #BFD65E */
+  font-size: clamp(2.5rem, 6vw, 5rem);  /* grande e responsivo */
+  margin-bottom: 0.5rem;
+}
+
+.tileDesc {
+  margin: 0;
+  color: #143d3b;              /* mesma cor do número */
+  font-size: clamp(0.95rem, 1.4vw, 1.1rem);
+  line-height: 1.4;
+  max-width: 28ch;             /* quebra de linha agradável */
+}
+
+/* garante centralização do conteúdo do tile */
+.tileContent {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  text-align: center;
+}
+
+/* imagem do tile 2 */
+.tileImage {
+  width: clamp(120px, 28vw, 180px);
+  aspect-ratio: 1/1;
+  display: grid;
+  place-items: center;
+  margin-bottom: 0.5rem;
+}
+.tileImage svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* legenda do tile (já usada no tile 1) */
+.tileDesc {
+  margin: 0;
+  color: #143d3b;
+  font-size: clamp(0.95rem, 1.4vw, 1.1rem);
+  line-height: 1.4;
+  max-width: 28ch;
+}
+
+.tileImage {
+  width: clamp(120px, 28vw, 180px);
+  aspect-ratio: 1/1;
+  display: grid;
+  place-items: center;
+  margin-bottom: 0.5rem;
+}
+.tileImage svg { width: 100%; height: 100%; }
+
+
+.duoImages {
+  width: 100%;
+  max-width: 1000px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.duoCol {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem; /* espaço entre imagem e legendas */
+}
+
+.duoItem {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 6px 18px rgba(0,0,0,.12);
+}
+
+.duoImg { object-fit: cover; }
+
+/* legendas da 1ª imagem */
+.duoCapTitle {
+  margin: 0;
+  font-weight: 800;
+  color: #394508;   /* cor pedida */
+  font-size: clamp(1rem, 1.2vw + 0.6rem, 1.4rem);
+}
+
+.duoCapText {
+  margin: 0;
+  color: #5D5D5D;   /* cor pedida */
+  line-height: 1.5;
+  font-size: 0.98rem;
+}
+
+
+
+
+/* faixa branca que ocupa toda a largura da área de conteúdo */
+.siteFooterBand {
+  width: 100%;
+  align-self: stretch;      /* garante que estique mesmo com .content centralizado */
+  background: #BFD65E;      /* branco, como pedido */
+  margin-top: 1.5rem;
+  padding: 2rem 1.5rem;
+  min-height: 220px;        /* ajuste a altura que preferir */
+  border-radius: 16px;      /* se quiser cantos retos, coloque 0 */
+  box-shadow: 0 6px 18px rgba(0,0,0,.08);
+  border: 1px solid #eee;   /* linha sutil para separar do bloco acima */
+}
+
+/* grid interno para você organizar dados do site quando quiser */
+.siteFooterContent {
+  max-width: 1000px;        /* mantém alinhado com o resto da página */
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);  /* mude conforme o conteúdo */
+  gap: 1rem;
+}
+
+/* responsivo */
+@media (max-width: 720px) {
+  .siteFooterContent {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+
+
+
+
+/* faixa verde */
+.brandBanner {
+  width: 100%;
+  align-self: stretch;
+  background: #BFD65E;      /* cor pedida */
+  margin-top: 1.5rem;
+  min-height: 220px;
+  border-radius: 16px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 6px 18px rgba(0,0,0,.08);
+}
+
+/* estrela grande no topo-esquerdo */
+.starBig {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  width: clamp(64px, 10vw, 110px);
+  height: clamp(64px, 10vw, 110px);
+}
+.starBig svg { width: 100%; height: 100%; display: block; }
+
+/* nome do site no rodapé-esquerdo */
+.brandName {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
+  margin: 0;
+  color: #FFFFFF;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  font-size: clamp(1.6rem, 3vw + 0.4rem, 2.6rem);
 }
