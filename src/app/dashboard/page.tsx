@@ -6,15 +6,15 @@ import RouteGuard from "@/components/RouteGuard";
 import { useRouter } from "next/navigation";
 
 export default function Dashboard() {
-  const router = useRouter();
+   const router = useRouter();
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    router.push("/login");
-  };
+  // const handleLogout = () => {
+  //   localStorage.removeItem("token");
+  //   router.push("/login");
+  // };
 
   return (
-    <RouteGuard>
+    // <RouteGuard>
       <div className={styles.container}>
         {/* Header */}
         <header className={styles.header}>
@@ -22,9 +22,9 @@ export default function Dashboard() {
             <h2>Bem Vindo</h2>
             <p className={styles.username}>Xxxxxxxxxxx.</p>
           </div>
-          <button onClick={handleLogout} className={styles.logoutButton}>
+          {/* <button onClick={handleLogout} className={styles.logoutButton}>
             Logout
-          </button>
+          </button> */}
           <div className={styles.avatar}>
             <FaUserCircle size={70} color="#fff" />
           </div>
@@ -33,33 +33,45 @@ export default function Dashboard() {
         {/* Cards */}
         <main className={styles.main}>
           <div className={styles.grid}>
-            <div className={styles.card}>
+            <div 
+            onClick={() => router.push('/testes_dashboard/box1')}
+            className={styles.card}>
               <FaHeart size={28} />
-              <p>Leitura Rápida / Fluência Verbal</p>
+              <p>1. Leitura Rápida / Fluência Verbal</p>
             </div>
-            <div className={styles.card}>
+            <div 
+             onClick={() => router.push('/testes_dashboard/box2')}
+            className={styles.card}>
               <FaHeart size={28} />
-              <p>Repetição de Fonemas e Pares Mínimos</p>
+              <p>2. Repetição de Fonemas e Pares Mínimos</p>
             </div>
-            <div className={styles.card}>
+            <div
+            onClick={() => router.push('/testes_dashboard/box3')}
+            className={styles.card}>
               <FaHeart size={28} />
-              <p>Leitura de Palavras e Pseudopalavras</p>
+              <p>3. Leitura de Palavras e Pseudopalavras</p>
             </div>
-            <div className={styles.card}>
+            <div
+            onClick={() => router.push('/testes_dashboard/box4_figuras')}
+            className={styles.card}>
               <FaHeart size={28} />
-              <p>Teste de Nomeação de Figuras</p>
+              <p>4. Teste de Nomeação de Figuras</p>
             </div>
-            <div className={styles.card}>
+            <div
+            onClick={() => router.push('/testes_dashboard/box5')}
+            className={styles.card}>
               <FaHeart size={28} />
-              <p>Frases Curtas de Repetição / Leitura</p>
+              <p>5. Frases Curtas de Repetição / Leitura</p>
             </div>
-            <div className={styles.card}>
+            <div
+            onClick={() => router.push('/testes_dashboard/box6')}
+            className={styles.card}>
               <FaHeart size={28} />
-              <p>Repetição de Sílabas e Trava-línguas</p>
+              <p>6. Repetição de Sílabas e Trava-línguas</p>
             </div>
           </div>
         </main>
       </div>
-    </RouteGuard>
+    // </RouteGuard>
   );
 }

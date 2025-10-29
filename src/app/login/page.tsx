@@ -61,7 +61,8 @@ export default function LoginPage() {
             className={styles.input}
             required
           />
-          <button type="submit" className={styles.button}>
+          <button 
+          type="submit" className={styles.button}>
             Entrar
           </button>
         </form>

@@ -116,8 +116,8 @@ export default function HomePage() {
           <Image
             src="/images/foto_fono_homepage.jpg"
             alt="Fonoaudióloga orientando paciente durante sessão"
-            fill          // preenche o container .hero
-            priority      // carrega mais rápido por estar no topo
+            fill          
+            priority      
             sizes="(min-width: 1024px) 900px, 100vw"
             className={styles.heroImg}
           />
@@ -146,7 +146,7 @@ export default function HomePage() {
           {/* segundo quadrado verde */}
           <div className={styles.tile}>
             <div className={styles.tileContent}>
-              {/* IMAGEM: alvo com seta (eficiência) */}
+              
               <div className={styles.tileImage} aria-label="Eficiência de prática">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"

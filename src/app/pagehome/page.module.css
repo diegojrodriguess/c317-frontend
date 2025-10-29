@@ -27,7 +27,9 @@
   padding: 2rem;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 1.25rem;
+  align-items: flex-start;
 }
 
 .logo {
@@ -110,14 +112,15 @@
 .footer {
   font-size: 0.8rem;
   opacity: 0.7;
+  margin-top: auto;
 }
 
-/* botão “Começar” */
+/* botão “Começar” centralizado */
 .ctaButton {
-  margin-top: 1rem;
-  margin-left: 31%;
+  align-self: center;   /* 🔥 centraliza só o botão */
+  margin: 0;
   background: #F0F0D8;
-  color: #143d3b;           /* contraste com o fundo verde */
+  color: #143d3b;
   border: 0;
   padding: 0.75rem 1.5rem;
   border-radius: 12px;
@@ -126,12 +129,10 @@
   white-space: nowrap;
   box-shadow: 0 2px 8px rgba(0,0,0,.12);
   transition: transform .15s ease, box-shadow .15s ease;
-  width: 25%;
-  text-align: center;
+  width: auto;
   min-width: 170px;
   min-height: 40px;
-  
-  
+  text-align: center;
 }
 .ctaButton:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,0,0,.18); }
 .ctaButton:focus { outline: 2px solid #A8C030; outline-offset: 2px; }
