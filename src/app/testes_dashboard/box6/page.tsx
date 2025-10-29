@@ -20,7 +20,7 @@ export default function FluenciaVerbalPage() {
     {
       title: "Sílabas Saltitantes",
       text:
-        "Pa-pe-pi-po-pu, o papagaio pulou!  Ta-te-ti-to-tu, o tatu tropeçou!    Ca-ce-ci-co-cu, o cachorro cantou!  Repetir sem errar é o grande desafio.",
+        "Pa-pe-pi-po-pu, o papagaio pulou!  Ta-te-ti-to-tu, o tatu tropeçou!    Ca-ce-ci-co-cu, o cachorro cantou!  Ba-be-bi-bo-bu, o bebê balbuciou!",
     },
     {
       title: "O Rato e o Relojoeiro",
@@ -30,7 +30,7 @@ export default function FluenciaVerbalPage() {
     {
       title: "Três Tigres",
       text:
-        "Três tigres tristes tropeçaram no trigo.   O trigo dos tigres era trançado e torto.    Quanto mais trigo, mais tristes os tigres.  Tenta repetir três vezes sem travar!",
+        "Três tigres tristes tropeçaram no trigo.   O trigo dos tigres era trançado e torto.    Quanto mais trigo, mais tristes os tigres.  Tristes tigres trançam trigo torto.",
     },
   ];
   

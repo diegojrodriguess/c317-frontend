@@ -1,0 +1,192 @@
+/* layout base (escuro suave para foco) */
+.container {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: #0f3d3e;            
+  padding: 2rem;
+}
+
+.card {
+  width: 100%;
+  max-width: 680px;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,.15);
+  text-align: center;
+}
+
+.title {
+  margin: 0 0 .25rem 0;
+  font-size: 1.6rem;
+  color: #143d3b;
+  font-weight: 800;
+  letter-spacing: .2px;
+}
+
+.subtitle {
+  margin: 0 0 1.5rem 0;
+  color: #5d5d5d;
+}
+
+/* botão de microfone */
+.micButton {
+  appearance: none;
+  border: none;
+  background: #F0F0D8;
+  color: #143d3b;
+  width: 160px;
+  height: 160px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 1rem auto;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0,0,0,.12);
+  transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.micButton:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(0,0,0,.16); }
+.micButton:active { transform: translateY(0); }
+
+.micActive {
+  background: #A8C030;           /* ativo: verde destaque */
+  color: #143d3b;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(168,192,48,.4); }
+  50%      { box-shadow: 0 0 0 12px rgba(168,192,48,0); }
+}
+
+.micIcon {
+  width: 56px;
+  height: 56px;
+}
+
+.micLabel {
+  margin-top: .5rem;
+  font-weight: 800;
+}
+
+/* cronômetro */
+.timer {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: #143d3b;
+  margin-bottom: .75rem;
+  font-size: 1.25rem;
+}
+
+/* barra de progresso */
+.progressTrack {
+  width: 100%;
+  height: 14px;
+  background: #eef2e2;           /* trilha */
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 0 auto 1rem auto;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #A8C030, #BFD65E);
+  width: 0%;
+  border-radius: 999px;
+  transition: width .1s linear;
+}
+
+/* ações */
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: .75rem;
+  margin-top: .25rem;
+}
+
+.primary, .secondary, .actions > button {
+  appearance: none;
+  border: 0;
+  border-radius: 10px;
+  padding: .7rem 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.primary {
+  background: #74c0fc;
+  color: #fff;
+}
+.primary:hover { filter: brightness(0.95); }
+
+.secondary {
+  background: #f0f0f0;
+  color: #333;
+}
+.secondary:hover { filter: brightness(0.97); }
+
+.error {
+  margin-top: 1rem;
+  color: #b00020;
+  font-weight: 600;
+}
+
+.prompt {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: max-height .35s ease, opacity .25s ease, transform .25s ease;
+  background: #fafcf3;            /* leve para destacar do branco */
+  border: 1px solid #e6efc7;
+  border-radius: 12px;
+  padding: 0 1rem;                 /* padding será “ativado” quando abrir */
+  margin: 0 0 .75rem 0;
+}
+
+/* estado aberto quando gravando */
+.promptOpen {
+  max-height: 400px;               /* cabe o texto todo; ajuste se precisar */
+  opacity: 1;
+  transform: translateY(0);
+  padding: 1rem;
+}
+
+.promptTitle {
+  margin: 0 0 .35rem 0;
+  font-weight: 800;
+  color: #143d3b;
+  font-size: 1.1rem;
+}
+
+.promptBody {
+  margin: 0;
+  color: #374151;
+  line-height: 1.6;
+  font-size: 1rem;
+}
+
+/* container da imagem dentro do prompt */
+.promptImage {
+  position: relative;          /* necessário se usar next/image com fill */
+  width: 100%;
+  max-width: 640px;            /* limita a largura para leitura confortável */
+  aspect-ratio: 16 / 5;        /* ajuste conforme o formato dos seus sprites */
+  margin: 0.5rem auto 0.25rem; /* centraliza e dá respiro */
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(0,0,0,.06);
+}
+
+.promptHint {
+  margin: 0.4rem 0 0 0;
+  color: #5d5d5d;
+  font-size: 0.95rem;
+}
