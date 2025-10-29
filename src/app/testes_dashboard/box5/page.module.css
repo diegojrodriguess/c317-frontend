@@ -151,7 +151,7 @@
 
 /* estado aberto quando gravando */
 .promptOpen {
-  max-height: 400px;               /* cabe o texto todo; ajuste se precisar */
+  max-height: 400px;               
   opacity: 1;
   transform: translateY(0);
   padding: 1rem;
