@@ -2,14 +2,18 @@
 
 import { useEffect, useRef, useState } from "react";
 import styles from "./page.module.css";
+import AudioService from "@/services/AudioService";
 
-const MAX_SECONDS = 30; //tempo do teste
+const MAX_SECONDS = 30;
 
 export default function FluenciaVerbalPage() {
   const [isRecording, setIsRecording] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [audioURL, setAudioURL] = useState<string | null>(null);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [processingResult, setProcessingResult] = useState<any>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -17,31 +21,13 @@ export default function FluenciaVerbalPage() {
   const timerRef = useRef<number | null>(null);
 
   const PROMPTS = [
-    {
-      title: "O Despertar da Manhã",
-      text:
-        "Quando o sol começa a surgir no horizonte, o mundo desperta em cores e sons. Os pássaros cantam, o vento sopra leve entre as árvores e o ar fresco traz uma sensação de recomeço. Cada manhã é uma nova chance de viver, aprender e seguir em frente com mais energia e esperança.",
-    },
-    {
-      title: "A Corrida da Chuva",
-      text:
-         "As nuvens se juntaram no céu como um grande exército cinza. De repente, o vento soprou forte e as primeiras gotas caíram apressadas, disputando quem chegaria primeiro ao chão. As pessoas correram, rindo e se protegendo, enquanto a cidade ganhava um novo brilho sob a chuva.",
-    },
-    {
-      title: "O Valor do Silêncio",
-      text:
-        "Nem sempre o silêncio é vazio. Às vezes, ele é o espaço onde nascem as melhores ideias. Quando tudo se cala, a mente encontra tempo para respirar e o coração para escutar. Falar é importante, mas saber quando parar e ouvir é um sinal de sabedoria.",
-    },
+    { title: "O Despertar da Manhã", text: "Quando o sol começa..." },
+    { title: "A Corrida da Chuva", text: "As nuvens se juntaram..." },
+    { title: "O Valor do Silêncio", text: "Nem sempre o silêncio..." },
   ];
-  
+
   const [selectedPrompt, setSelectedPrompt] = useState<{ title: string; text: string } | null>(null);
 
-  
-
-  
-
-
-  // formata mm:ss
   const mmss = (s: number) => {
     const m = Math.floor(s / 60).toString().padStart(2, "0");
     const ss = Math.floor(s % 60).toString().padStart(2, "0");
@@ -49,12 +35,12 @@ export default function FluenciaVerbalPage() {
   };
 
   const startTimer = () => {
-    stopTimer(); // segurança
+    stopTimer();
     timerRef.current = window.setInterval(() => {
       setElapsed((prev) => {
-        const next = prev + 0.1; 
+        const next = prev + 0.1;
         if (next >= MAX_SECONDS) {
-          stopRecording(true); // auto stop ao atingir limite
+          stopRecording(true);
         }
         return next;
       });
@@ -69,51 +55,53 @@ export default function FluenciaVerbalPage() {
   };
 
   const startRecording = async () => {
-  try {
-    setErrorMsg(null);
-    setAudioURL(null);
-    chunksRef.current = [];
+    try {
+      setErrorMsg(null);
+      setAudioURL(null);
+      setAudioBlob(null);
+      setProcessingResult(null);
+      chunksRef.current = [];
 
-    // sorteador de prompt
-    const idx = Math.floor(Math.random() * PROMPTS.length);
-    setSelectedPrompt(PROMPTS[idx]);
+      const idx = Math.floor(Math.random() * PROMPTS.length);
+      setSelectedPrompt(PROMPTS[idx]);
 
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    streamRef.current = stream;
-    const mr = new MediaRecorder(stream, { mimeType: "audio/webm" });
-    mediaRecorderRef.current = mr;
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
 
-    mr.ondataavailable = (e) => {
-      if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
-    };
-    mr.onstop = () => {
-      const blob = new Blob(chunksRef.current, { type: "audio/webm" });
-      setAudioURL(URL.createObjectURL(blob));
-    };
+      const recorder = new MediaRecorder(stream, {
+        mimeType: "audio/ogg", // ✔ formato aceito pelo backend
+      });
 
-    mr.start(100);
-    setIsRecording(true);
-    setElapsed(0);
-    startTimer();
-  } catch (err: any) {
-    setErrorMsg(
-      err?.name === "NotAllowedError"
-        ? "Permissão de microfone negada. Ative o acesso nas configurações do navegador."
-        : "Não foi possível iniciar a captura de áudio."
-    );
-    cleanupStreams();
-  }
-};
+      mediaRecorderRef.current = recorder;
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      recorder.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: "audio/ogg" });
+        setAudioURL(URL.createObjectURL(blob));
+        setAudioBlob(blob); // ✔ salvamos para enviar ao backend
+      };
+
+      recorder.start(100);
+      setIsRecording(true);
+      setElapsed(0);
+      startTimer();
+    } catch (err: any) {
+      setErrorMsg("Erro ao iniciar gravação.");
+      cleanupStreams();
+    }
+  };
 
   const stopRecording = (auto = false) => {
     stopTimer();
     setIsRecording(false);
-    mediaRecorderRef.current?.state === "recording" && mediaRecorderRef.current.stop();
-    cleanupStreams();
-    if (auto) {
-      // caso pare por atingir o tempo
-      setElapsed(MAX_SECONDS);
+    if (mediaRecorderRef.current?.state === "recording") {
+      mediaRecorderRef.current.stop();
     }
+    cleanupStreams();
+    if (auto) setElapsed(MAX_SECONDS);
   };
 
   const toggleRecording = async () => {
@@ -136,6 +124,21 @@ export default function FluenciaVerbalPage() {
     };
   }, []);
 
+  const sendToBackend = async () => {
+    if (!audioBlob) return;
+
+    try {
+      setIsUploading(true);
+      const result = await AudioService.uploadAudio(audioBlob);
+      setProcessingResult(result.data);
+    } catch (err) {
+      setErrorMsg("Erro ao enviar áudio.");
+      console.error(err);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const progress = Math.min(elapsed / MAX_SECONDS, 1);
 
   return (
@@ -143,61 +146,48 @@ export default function FluenciaVerbalPage() {
       <div className={styles.card}>
         <h1 className={styles.title}>Leitura Rápida / Fluência Verbal</h1>
         <p className={styles.subtitle}>
-          Pressione o microfone e leia o texto proposto. O teste encerra em {MAX_SECONDS}s.
+          Pressione o microfone e leia o texto abaixo. O teste encerra em {MAX_SECONDS}s.
         </p>
 
         <button
           className={`${styles.micButton} ${isRecording ? styles.micActive : ""}`}
           onClick={toggleRecording}
-          aria-pressed={isRecording}
-          aria-label={isRecording ? "Parar gravação" : "Iniciar gravação"}
         >
-          {/* ícone */}
-          <svg viewBox="0 0 24 24" className={styles.micIcon} aria-hidden="true">
-            <path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3z" fill="currentColor" />
-            <path d="M19 11a1 1 0 0 0-2 0 5 5 0 0 1-10 0 1 1 0 0 0-2 0 7 7 0 0 0 6 6.92V20H8a1 1 0 0 0 0 2h8a1 1 0 0 0 0-2h-3v-2.08A7 7 0 0 0 19 11z" fill="currentColor" />
-          </svg>
-          <span className={styles.micLabel}>{isRecording ? "Gravando..." : "Iniciar"}</span>
+          <span>{isRecording ? "Gravando..." : "Iniciar"}</span>
         </button>
 
         <div className={styles.timer}>{mmss(elapsed)}</div>
 
-        {/*  Texto para leitura */}
-        <div
-          className={`${styles.prompt} ${isRecording ? styles.promptOpen : ""}`}
-          aria-hidden={!isRecording}
-        >
-          {selectedPrompt && (
-            <>
-              <h2 className={styles.promptTitle}>{selectedPrompt.title}</h2>
-              <p className={styles.promptBody}>{selectedPrompt.text}</p>
-            </>
-          )}
-        </div>
+        {selectedPrompt && isRecording && (
+          <div className={styles.prompt}>
+            <h2>{selectedPrompt.title}</h2>
+            <p>{selectedPrompt.text}</p>
+          </div>
+        )}
 
-        <div className={styles.progressTrack} aria-label="Progresso do tempo">
-          <div className={styles.progressFill} style={{ width: `${progress * 100}%` }} />
-        </div>
+        {audioURL && (
+          <>
+            <audio controls src={audioURL} style={{ marginTop: 20 }} />
 
-        <div className={styles.actions}>
-          <button
-            className={styles.secondary}
-            onClick={() => {
-              stopRecording();
-              setElapsed(0);
-              setAudioURL(null);
-              setSelectedPrompt(null); // sorteia dnv
-            }}
-          >
-            Recomeçar
-          </button>
+            <button
+              className={styles.primary}
+              onClick={sendToBackend}
+              disabled={isUploading}
+              style={{ marginTop: 20 }}
+            >
+              {isUploading ? "Enviando..." : "Enviar para análise"}
+            </button>
+          </>
+        )}
 
-          {audioURL && (
-            <a className={styles.primary} href={audioURL} download="fluencia.webm">
-              Baixar Áudio
-            </a>
-          )}
-        </div>
+        {processingResult && (
+          <div className={styles.resultBox}>
+            <h3>Resultado da Análise</h3>
+            <p><strong>Transcrição:</strong> {processingResult.transcription}</p>
+            <p><strong>Pontuação:</strong> {processingResult.score}</p>
+            <p><strong>Mensagem:</strong> {processingResult.audioMessage}</p>
+          </div>
+        )}
 
         {errorMsg && <p className={styles.error}>{errorMsg}</p>}
       </div>
