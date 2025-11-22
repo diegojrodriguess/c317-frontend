@@ -69,6 +69,12 @@ export default function Dashboard() {
               <FaHeart size={28} />
               <p>6. Repetição de Sílabas e Trava-línguas</p>
             </div>
+            <div
+            onClick={() => router.push('/history')}
+            className={styles.card}>
+              <FaHeart size={28} />
+              <p>Histórico de Avaliações</p>
+            </div>
           </div>
         </main>
       </div>

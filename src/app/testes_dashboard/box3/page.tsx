@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import AudioService from "@/services/AudioService";
 import styles from "./page.module.css";
 
 const MAX_SECONDS = 30; //tempo do teste
@@ -10,6 +11,8 @@ export default function FluenciaVerbalPage() {
   const [elapsed, setElapsed] = useState(0);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [audioURL, setAudioURL] = useState<string | null>(null);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -80,15 +83,34 @@ export default function FluenciaVerbalPage() {
 
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     streamRef.current = stream;
-    const mr = new MediaRecorder(stream, { mimeType: "audio/webm" });
+
+    const MIME_CANDIDATES = [
+      "audio/webm;codecs=opus",
+      "audio/webm",
+      "audio/ogg;codecs=opus",
+      "audio/ogg",
+      "audio/mp4",
+      "audio/wav",
+      ""
+    ];
+    const supported = MIME_CANDIDATES.find(m => !m || MediaRecorder.isTypeSupported(m)) || "";
+    const mimeType = supported || "audio/webm";
+    let mr: MediaRecorder;
+    try {
+      mr = supported ? new MediaRecorder(stream, supported ? { mimeType } : undefined) : new MediaRecorder(stream);
+    } catch (recErr: any) {
+      throw new Error("Formato de gravação não suportado pelo navegador.");
+    }
     mediaRecorderRef.current = mr;
 
     mr.ondataavailable = (e) => {
       if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
     };
     mr.onstop = () => {
-      const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+      const finalMime = mimeType && mimeType !== "" ? mimeType.split(";")[0] : "audio/webm";
+      const blob = new Blob(chunksRef.current, { type: finalMime });
       setAudioURL(URL.createObjectURL(blob));
+      setAudioBlob(blob);
     };
 
     mr.start(100);
@@ -96,11 +118,10 @@ export default function FluenciaVerbalPage() {
     setElapsed(0);
     startTimer();
   } catch (err: any) {
-    setErrorMsg(
-      err?.name === "NotAllowedError"
-        ? "Permissão de microfone negada. Ative o acesso nas configurações do navegador."
-        : "Não foi possível iniciar a captura de áudio."
-    );
+    let msg = "Não foi possível iniciar a captura de áudio.";
+    if (err?.name === "NotAllowedError") msg = "Permissão de microfone negada. Autorize o acesso nas configurações do navegador.";
+    else if (/Formato de gravação não suportado/i.test(err?.message)) msg = "Seu navegador não suporta os formatos necessários. Tente Chrome ou Firefox.";
+    setErrorMsg(msg);
     cleanupStreams();
   }
 };
@@ -113,6 +134,24 @@ export default function FluenciaVerbalPage() {
     if (auto) {
       // caso pare por atingir o tempo
       setElapsed(MAX_SECONDS);
+    }
+  };
+
+  const sendToBackend = async () => {
+    if (!audioBlob) return;
+    try {
+      setIsUploading(true);
+      await AudioService.uploadAudio(audioBlob, {
+        targetWord: selectedPrompt?.text,
+        provider: "gemini",
+        mimeType: audioBlob.type || "audio/webm",
+      });
+      // poderia redirecionar ou exibir resultado aqui
+    } catch (err) {
+      setErrorMsg("Erro ao enviar áudio.");
+      console.error(err);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -186,6 +225,7 @@ export default function FluenciaVerbalPage() {
               stopRecording();
               setElapsed(0);
               setAudioURL(null);
+              setAudioBlob(null);
               setSelectedPrompt(null); // sorteia dnv
             }}
           >
@@ -193,9 +233,18 @@ export default function FluenciaVerbalPage() {
           </button>
 
           {audioURL && (
-            <a className={styles.primary} href={audioURL} download="fluencia.webm">
-              Baixar Áudio
-            </a>
+            <>
+              <a className={styles.primary} href={audioURL} download="fluencia.webm">
+                Baixar Áudio
+              </a>
+              <button
+                className={styles.primary}
+                onClick={sendToBackend}
+                disabled={isUploading}
+              >
+                {isUploading ? "Enviando..." : "Enviar para análise"}
+              </button>
+            </>
           )}
         </div>
 

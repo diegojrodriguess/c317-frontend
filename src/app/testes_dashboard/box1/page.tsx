@@ -65,12 +65,29 @@ export default function FluenciaVerbalPage() {
       const idx = Math.floor(Math.random() * PROMPTS.length);
       setSelectedPrompt(PROMPTS[idx]);
 
+      // Solicita permissão de áudio
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
 
-      const recorder = new MediaRecorder(stream, {
-        mimeType: "audio/ogg", // ✔ formato aceito pelo backend
-      });
+      // Seleção dinâmica de MIME suportado
+      const MIME_CANDIDATES = [
+        "audio/webm;codecs=opus",
+        "audio/webm",
+        "audio/ogg;codecs=opus",
+        "audio/ogg",
+        "audio/mp4",
+        "audio/wav",
+        ""
+      ];
+      const supported = MIME_CANDIDATES.find(m => !m || MediaRecorder.isTypeSupported(m)) || "";
+      const mimeType = supported || "audio/webm"; // fallback final
+
+      let recorder: MediaRecorder;
+      try {
+        recorder = supported ? new MediaRecorder(stream, supported ? { mimeType } : undefined) : new MediaRecorder(stream);
+      } catch (recErr: any) {
+        throw new Error("Formato de gravação não suportado pelo navegador.");
+      }
 
       mediaRecorderRef.current = recorder;
 
@@ -79,9 +96,10 @@ export default function FluenciaVerbalPage() {
       };
 
       recorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: "audio/ogg" });
+        const finalMime = mimeType && mimeType !== "" ? mimeType.split(";")[0] : "audio/webm";
+        const blob = new Blob(chunksRef.current, { type: finalMime });
         setAudioURL(URL.createObjectURL(blob));
-        setAudioBlob(blob); // ✔ salvamos para enviar ao backend
+        setAudioBlob(blob);
       };
 
       recorder.start(100);
@@ -89,7 +107,10 @@ export default function FluenciaVerbalPage() {
       setElapsed(0);
       startTimer();
     } catch (err: any) {
-      setErrorMsg("Erro ao iniciar gravação.");
+      let msg = "Erro ao iniciar gravação.";
+      if (err?.name === "NotAllowedError") msg = "Permissão de microfone negada. Autorize o acesso nas configurações do navegador.";
+      else if (/Formato de gravação não suportado/i.test(err?.message)) msg = "Seu navegador não suporta os formatos necessários. Tente Chrome ou Firefox.";
+      setErrorMsg(msg);
       cleanupStreams();
     }
   };
@@ -129,7 +150,11 @@ export default function FluenciaVerbalPage() {
 
     try {
       setIsUploading(true);
-      const result = await AudioService.uploadAudio(audioBlob);
+      const result = await AudioService.uploadAudio(audioBlob, {
+        targetWord: selectedPrompt?.text,
+        provider: "gemini",
+        mimeType: audioBlob.type || "audio/ogg",
+      });
       setProcessingResult(result.data);
     } catch (err) {
       setErrorMsg("Erro ao enviar áudio.");
