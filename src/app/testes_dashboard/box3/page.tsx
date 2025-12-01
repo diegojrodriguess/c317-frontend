@@ -23,28 +23,23 @@ export default function FluenciaVerbalPage() {
     {
       title: "A Viagem de Naro",
       text:
-        "Naro pegou o mapa e saiu cedo. Passou pela ponte, viu um lago e encontrou uma brinela azul no caminho. O vento soprava forte e o tremulo parecia dançar no ar. Tudo era novo, mas soava familiar.",
+        "Naro pegou o mapa e saiu cedo. Passou pela ponte, viu um lago e encontrou uma brinela azul no caminho...",
     },
     {
       title: "O Jardim de Zefa",
       text:
-         "Zefa cuidava das flores, dos vasos e dos belinhos. Certo dia, apareceu um grupel colorido entre as folhas. Ela sorriu, regou tudo e disse: “Meu jardim fala comigo!”. Os sons pareciam música.",
+        "Zefa cuidava das flores, dos vasos e dos belinhos. Certo dia, apareceu um grupel colorido entre as folhas...",
     },
     {
       title: "O Menino e o Valtor",
       text:
-        "O menino subiu na bicicleta e pedalou até o valtor. Lá, encontrou uma ponça e pulou rindo. Cada passo ecoava no chão como se o mundo respondesse. Era só ele, o vento e as palavras inventadas.",
+        "O menino subiu na bicicleta e pedalou até o valtor. Lá encontrou uma ponça e pulou rindo...",
     },
   ];
   
-  const [selectedPrompt, setSelectedPrompt] = useState<{ title: string; text: string } | null>(null);
+  const [selectedPrompt, setSelectedPrompt] =
+    useState<{ title: string; text: string } | null>(null);
 
-  
-
-  
-
-
-  // formata mm:ss
   const mmss = (s: number) => {
     const m = Math.floor(s / 60).toString().padStart(2, "0");
     const ss = Math.floor(s % 60).toString().padStart(2, "0");
@@ -52,13 +47,11 @@ export default function FluenciaVerbalPage() {
   };
 
   const startTimer = () => {
-    stopTimer(); // segurança
+    stopTimer();
     timerRef.current = window.setInterval(() => {
       setElapsed((prev) => {
-        const next = prev + 0.1; 
-        if (next >= MAX_SECONDS) {
-          stopRecording(true); // auto stop ao atingir limite
-        }
+        const next = prev + 0.1;
+        if (next >= MAX_SECONDS) stopRecording(true);
         return next;
       });
     }, 100);
@@ -72,69 +65,71 @@ export default function FluenciaVerbalPage() {
   };
 
   const startRecording = async () => {
-  try {
-    setErrorMsg(null);
-    setAudioURL(null);
-    chunksRef.current = [];
-
-    // sorteador de prompt
-    const idx = Math.floor(Math.random() * PROMPTS.length);
-    setSelectedPrompt(PROMPTS[idx]);
-
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    streamRef.current = stream;
-
-    const MIME_CANDIDATES = [
-      "audio/webm;codecs=opus",
-      "audio/webm",
-      "audio/ogg;codecs=opus",
-      "audio/ogg",
-      "audio/mp4",
-      "audio/wav",
-      ""
-    ];
-    const supported = MIME_CANDIDATES.find(m => !m || MediaRecorder.isTypeSupported(m)) || "";
-    const mimeType = supported || "audio/webm";
-    let mr: MediaRecorder;
     try {
-      mr = supported ? new MediaRecorder(stream, supported ? { mimeType } : undefined) : new MediaRecorder(stream);
-    } catch (recErr: any) {
-      throw new Error("Formato de gravação não suportado pelo navegador.");
+      setErrorMsg(null);
+      setAudioURL(null);
+      setAudioBlob(null);
+      chunksRef.current = [];
+
+      const idx = Math.floor(Math.random() * PROMPTS.length);
+      setSelectedPrompt(PROMPTS[idx]);
+
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+
+      const MIME_CANDIDATES = [
+        "audio/webm;codecs=opus",
+        "audio/webm",
+        "audio/ogg;codecs=opus",
+        "audio/ogg",
+        "audio/mp4",
+        "audio/wav",
+        ""
+      ];
+      const supported = MIME_CANDIDATES.find(m => !m || MediaRecorder.isTypeSupported(m)) || "";
+      const mimeType = supported || "audio/webm";
+
+      let mr: MediaRecorder;
+      try {
+        mr = supported
+          ? new MediaRecorder(stream, { mimeType })
+          : new MediaRecorder(stream);
+      } catch {
+        throw new Error("Formato de gravação não suportado.");
+      }
+
+      mediaRecorderRef.current = mr;
+
+      mr.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      mr.onstop = () => {
+        const finalMime = mimeType.split(";")[0] || "audio/webm";
+        const blob = new Blob(chunksRef.current, { type: finalMime });
+        setAudioBlob(blob);
+        setAudioURL(URL.createObjectURL(blob));
+      };
+
+      mr.start(100);
+      setIsRecording(true);
+      setElapsed(0);
+      startTimer();
+    } catch (err: any) {
+      let msg = "Não foi possível iniciar a gravação.";
+      if (err?.name === "NotAllowedError") msg = "Permissão negada.";
+      setErrorMsg(msg);
+      cleanupStreams();
     }
-    mediaRecorderRef.current = mr;
-
-    mr.ondataavailable = (e) => {
-      if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
-    };
-    mr.onstop = () => {
-      const finalMime = mimeType && mimeType !== "" ? mimeType.split(";")[0] : "audio/webm";
-      const blob = new Blob(chunksRef.current, { type: finalMime });
-      setAudioURL(URL.createObjectURL(blob));
-      setAudioBlob(blob);
-    };
-
-    mr.start(100);
-    setIsRecording(true);
-    setElapsed(0);
-    startTimer();
-  } catch (err: any) {
-    let msg = "Não foi possível iniciar a captura de áudio.";
-    if (err?.name === "NotAllowedError") msg = "Permissão de microfone negada. Autorize o acesso nas configurações do navegador.";
-    else if (/Formato de gravação não suportado/i.test(err?.message)) msg = "Seu navegador não suporta os formatos necessários. Tente Chrome ou Firefox.";
-    setErrorMsg(msg);
-    cleanupStreams();
-  }
-};
+  };
 
   const stopRecording = (auto = false) => {
     stopTimer();
     setIsRecording(false);
-    mediaRecorderRef.current?.state === "recording" && mediaRecorderRef.current.stop();
+    mediaRecorderRef.current?.state === "recording" &&
+      mediaRecorderRef.current.stop();
     cleanupStreams();
-    if (auto) {
-      // caso pare por atingir o tempo
-      setElapsed(MAX_SECONDS);
-    }
+    if (auto) setElapsed(MAX_SECONDS);
   };
 
   const sendToBackend = async () => {
@@ -146,10 +141,8 @@ export default function FluenciaVerbalPage() {
         provider: "gemini",
         mimeType: audioBlob.type || "audio/webm",
       });
-      // poderia redirecionar ou exibir resultado aqui
-    } catch (err) {
+    } catch {
       setErrorMsg("Erro ao enviar áudio.");
-      console.error(err);
     } finally {
       setIsUploading(false);
     }
@@ -182,30 +175,19 @@ export default function FluenciaVerbalPage() {
       <div className={styles.card}>
         <h1 className={styles.title}>Leitura de Palavras e Pseudopalavras</h1>
         <p className={styles.subtitle}>
-          Pressione o microfone e leia o texto proposto. O teste encerra em {MAX_SECONDS}s.
+          Pressione o microfone e leia o texto proposto.
         </p>
 
         <button
           className={`${styles.micButton} ${isRecording ? styles.micActive : ""}`}
           onClick={toggleRecording}
-          aria-pressed={isRecording}
-          aria-label={isRecording ? "Parar gravação" : "Iniciar gravação"}
         >
-          {/* ícone */}
-          <svg viewBox="0 0 24 24" className={styles.micIcon} aria-hidden="true">
-            <path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3z" fill="currentColor" />
-            <path d="M19 11a1 1 0 0 0-2 0 5 5 0 0 1-10 0 1 1 0 0 0-2 0 7 7 0 0 0 6 6.92V20H8a1 1 0 0 0 0 2h8a1 1 0 0 0 0-2h-3v-2.08A7 7 0 0 0 19 11z" fill="currentColor" />
-          </svg>
-          <span className={styles.micLabel}>{isRecording ? "Gravando..." : "Iniciar"}</span>
+          {isRecording ? "Gravando..." : "Iniciar"}
         </button>
 
         <div className={styles.timer}>{mmss(elapsed)}</div>
 
-        {/*  Texto para leitura */}
-        <div
-          className={`${styles.prompt} ${isRecording ? styles.promptOpen : ""}`}
-          aria-hidden={!isRecording}
-        >
+        <div className={`${styles.prompt} ${isRecording ? styles.promptOpen : ""}`}>
           {selectedPrompt && (
             <>
               <h2 className={styles.promptTitle}>{selectedPrompt.title}</h2>
@@ -214,8 +196,11 @@ export default function FluenciaVerbalPage() {
           )}
         </div>
 
-        <div className={styles.progressTrack} aria-label="Progresso do tempo">
-          <div className={styles.progressFill} style={{ width: `${progress * 100}%` }} />
+        <div className={styles.progressTrack}>
+          <div
+            className={styles.progressFill}
+            style={{ width: `${progress * 100}%` }}
+          />
         </div>
 
         <div className={styles.actions}>
@@ -226,7 +211,7 @@ export default function FluenciaVerbalPage() {
               setElapsed(0);
               setAudioURL(null);
               setAudioBlob(null);
-              setSelectedPrompt(null); // sorteia dnv
+              setSelectedPrompt(null);
             }}
           >
             Recomeçar
