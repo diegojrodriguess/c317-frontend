@@ -4,6 +4,7 @@ import { useState } from "react";
 import styles from "./page.module.css";
 import { useRouter } from "next/navigation";
 import AuthService from "@/services/AuthService";
+import { jwtDecode } from "jwt-decode";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -16,6 +17,11 @@ export default function LoginPage() {
       const data = await AuthService.login(email, password);
 
       localStorage.setItem("token", data.access_token);
+
+      const user = jwtDecode<any>(data.access_token);
+      console.log(user);
+
+      localStorage.setItem("user", JSON.stringify(user));
       console.log(data.access_token);
       router.push("/dashboard");
     } catch (error) {

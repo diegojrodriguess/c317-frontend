@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 import AuthService from "@/services/AuthService";
+import { jwtDecode } from "jwt-decode";
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
@@ -19,6 +20,12 @@ export default function RegisterPage() {
       const data = await AuthService.register(name, age, email, password);
 
       localStorage.setItem("token", data.access_token);
+
+      const user = jwtDecode<any>(data.access_token);
+      console.log(user);
+
+      localStorage.setItem("user", JSON.stringify(user));
+
       router.push("/dashboard");
     } catch (error) {
       console.error("Erro ao registrar:", error);
