@@ -1,0 +1,40 @@
+
+> c317-frontend@0.1.0 dev
+> next dev -p 3001 --turbopack
+
+   ▲ Next.js 15.5.3 (Turbopack)
+   - Local:        http://localhost:3001
+   - Network:      http://192.168.0.100:3001
+
+ ✓ Starting...
+ ✓ Ready in 1979ms
+ ○ Compiling / ...
+ ✓ Compiled / in 3.1s
+ HEAD / 307 in 3505ms
+ ✓ Compiled /testes_dashboard/box1 in 319ms
+ HEAD /testes_dashboard/box1 200 in 418ms
+ GET / 307 in 405ms
+ ✓ Compiled /pagehome in 352ms
+Invalid DOM property `stroke-width`. Did you mean `strokeWidth`?
+Invalid DOM property `stroke-linecap`. Did you mean `strokeLinecap`?
+Invalid DOM property `stroke-linejoin`. Did you mean `strokeLinejoin`?
+ GET /pagehome 200 in 494ms
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /favicon.ico in 816ms
+ GET /apple-touch-icon-precomposed.png 404 in 946ms
+ GET /favicon.ico?favicon.0b3bf435.ico 200 in 1127ms
+ GET /apple-touch-icon.png 404 in 227ms
+ ✓ Compiled /login in 299ms
+ GET /login 200 in 416ms
+ ✓ Compiled /register in 260ms
+ GET /register 200 in 358ms
+ ○ Compiling /dashboard ...
+ ✓ Compiled /dashboard in 513ms
+ GET /dashboard 200 in 579ms
+ GET /testes_dashboard/box1 200 in 162ms
+ ✓ Compiled in 74ms
+ ✓ Compiled in 29ms
+ GET /testes_dashboard/box1 200 in 148ms
+ ✓ Compiled in 13ms
+ ✓ Compiled in 55ms
+ ✓ Compiled in 21ms

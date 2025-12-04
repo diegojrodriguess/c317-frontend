@@ -62,6 +62,53 @@ class AudioService {
     if (!response.ok) throw new Error("Falha ao buscar histórico");
     return response.json();
   }
+
+  /**
+   * Gera/pega itens de uma categoria de tarefas no backend.
+   * Retorna o JSON bruto do endpoint `/tarefas/gerar`.
+   */
+  static async generateTasks(
+    category: string,
+    count = 5,
+    opts: { age_group?: string; difficulty?: string; include_meta?: boolean; use_ai?: boolean } = {}
+  ) {
+    const form = new FormData();
+    form.append("category", category);
+    form.append("count", String(count));
+    form.append("age_group", opts.age_group || "adulto");
+    form.append("difficulty", opts.difficulty || "medio");
+    form.append("include_meta", String(Boolean(opts.include_meta ?? true)));
+    if (opts.use_ai) form.append("use_ai", String(true));
+
+    const headers: Record<string, string> = {};
+    const token = getAuthToken();
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
+    const response = await fetch(`${API_BASE_URL}/tarefas/gerar`, {
+      method: "POST",
+      body: form,
+      headers,
+    });
+    // If backend doesn't expose /tarefas/gerar (404) try IA service directly as a fallback
+    if (!response.ok) {
+      if (response.status === 404) {
+        // try IA directly (development fallback)
+        try {
+          const iaRes = await fetch(`http://127.0.0.1:8000/tarefas/gerar`, {
+            method: "POST",
+            body: form,
+          });
+          if (iaRes.ok) return iaRes.json();
+        } catch (e) {
+          // fallthrough to throw original error below
+        }
+      }
+      const txt = await response.text();
+      throw new Error(txt || `Falha ao gerar tarefas (${response.status})`);
+    }
+
+    return response.json();
+  }
 }
 
 export default AudioService;

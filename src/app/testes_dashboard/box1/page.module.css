@@ -142,11 +142,14 @@
   opacity: 0;
   transform: translateY(-6px);
   transition: max-height .35s ease, opacity .25s ease, transform .25s ease;
-  background: #fafcf3;            /* leve para destacar do branco */
-  border: 1px solid #e6efc7;
+  background: #ffffff;            /* fundo branco para máximo contraste */
+  border: 2px solid #A8C030;      /* borda de destaque */
   border-radius: 12px;
-  padding: 0 1rem;                 /* padding será “ativado” quando abrir */
-  margin: 0 0 .75rem 0;
+  padding: 0 1rem;                /* padding será “ativado” quando abrir */
+  margin: 0 0 1rem 0;
+  position: relative;
+  z-index: 2;                      /* garante estar na frente de elementos posicionados */
+  box-shadow: 0 6px 18px rgba(0,0,0,.08);
 }
 
 /* estado aberto quando gravando */
@@ -161,12 +164,12 @@
   margin: 0 0 .35rem 0;
   font-weight: 800;
   color: #143d3b;
-  font-size: 1.1rem;
+  font-size: 1.3rem;
 }
 
 .promptBody {
   margin: 0;
-  color: #374151;
-  line-height: 1.6;
-  font-size: 1rem;
+  color: #000;
+  line-height: 1.8;
+  font-size: 1.15rem;
 }

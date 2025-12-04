@@ -19,14 +19,26 @@ export default function FluenciaVerbalPage() {
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<number | null>(null);
+  const cancelRef = useRef<boolean>(false);
 
-  const PROMPTS = [
+  // Activity is fixed for this page (selected on the dashboard before arriving here)
+  const ACTIVITY_KEY = "leitura_rapida";
+  const ACTIVITY_LABEL = "Leitura Rápida / Fluência Verbal";
+
+  // fallback prompts (used if backend unavailable)
+  const FALLBACK_PROMPTS = [
     { title: "O Despertar da Manhã", text: "Quando o sol começa..." },
     { title: "A Corrida da Chuva", text: "As nuvens se juntaram..." },
     { title: "O Valor do Silêncio", text: "Nem sempre o silêncio..." },
   ];
 
-  const [selectedPrompt, setSelectedPrompt] = useState<{ title: string; text: string } | null>(null);
+  // prompts may come from backend generator; each item may be a string or object with .text
+  const [prompts, setPrompts] = useState<Array<any>>([]);
+  const [selectedPromptIndex, setSelectedPromptIndex] = useState<number | null>(null);
+
+  const [selectedPrompt, setSelectedPrompt] = useState<{ title?: string; text: string; instructions?: string } | null>(null);
+  // Gemini is always used for generation in this page
+  const useGemini = true;
 
   const mmss = (s: number) => {
     const m = Math.floor(s / 60).toString().padStart(2, "0");
@@ -61,9 +73,32 @@ export default function FluenciaVerbalPage() {
       setAudioBlob(null);
       setProcessingResult(null);
       chunksRef.current = [];
+      if (isUploading) {
+        setErrorMsg("Aguarde a análise terminar antes de gravar novamente.");
+        return;
+      }
 
-      const idx = Math.floor(Math.random() * PROMPTS.length);
-      setSelectedPrompt(PROMPTS[idx]);
+      // ensure we have prompts available (try fetch on demand)
+      if (!prompts || prompts.length === 0) {
+        try {
+          const res = await AudioService.generateTasks(ACTIVITY_KEY, 5, { include_meta: true, use_ai: useGemini });
+          // res.items expected to be array of { text, target_words, instructions }
+          const items = Array.isArray(res?.items) ? res.items : [];
+          if (items.length) setPrompts(items);
+        } catch (e) {
+          // fallback: keep using local hardcoded ones
+          console.warn("generateTasks falhou, usando fallback prompts:", e);
+          setPrompts(FALLBACK_PROMPTS);
+        }
+      }
+      // keep the current selected prompt if exists; otherwise choose the first available
+      if (!selectedPrompt) {
+        const pool = (prompts && prompts.length ? prompts : FALLBACK_PROMPTS);
+        const first = pool[0] || FALLBACK_PROMPTS[0];
+        setSelectedPromptIndex(0);
+        const normalized = typeof first === "string" ? { text: first } : { text: first.text || "", title: first.title || "", instructions: first.instructions || "" };
+        setSelectedPrompt(normalized as any);
+      }
 
       // Solicita permissão de áudio
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -96,6 +131,14 @@ export default function FluenciaVerbalPage() {
       };
 
       recorder.onstop = () => {
+        // Se o usuário cancelou, não gerar blob/URL
+        if (cancelRef.current) {
+          cancelRef.current = false;
+          chunksRef.current = [];
+          setAudioURL(null);
+          setAudioBlob(null);
+          return;
+        }
         const finalMime = mimeType && mimeType !== "" ? mimeType.split(";")[0] : "audio/webm";
         const blob = new Blob(chunksRef.current, { type: finalMime });
         setAudioURL(URL.createObjectURL(blob));
@@ -125,6 +168,14 @@ export default function FluenciaVerbalPage() {
     if (auto) setElapsed(MAX_SECONDS);
   };
 
+  const cancelRecording = () => {
+    if (!isRecording && !mediaRecorderRef.current) return;
+    // Sinaliza cancelamento para que onstop não crie Blob
+    cancelRef.current = true;
+    stopRecording();
+    // estado já é limpo no onstop/cleanup
+  };
+
   const toggleRecording = async () => {
     if (isRecording) stopRecording();
     else await startRecording();
@@ -145,12 +196,48 @@ export default function FluenciaVerbalPage() {
     };
   }, []);
 
+  // Fetch prompts on mount for this fixed activity
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await AudioService.generateTasks(ACTIVITY_KEY, 5, { include_meta: true, use_ai: useGemini });
+        const items = Array.isArray(res?.items) ? res.items : [];
+        if (mounted && items.length) {
+          setPrompts(items);
+          // pick first by default
+          setSelectedPromptIndex(0);
+          const chosen = items[0];
+          const normalized = typeof chosen === "string" ? { text: chosen } : { text: chosen.text || "", title: chosen.title || "", instructions: chosen.instructions || "" };
+          setSelectedPrompt(normalized as any);
+        } else if (mounted) {
+          setPrompts(FALLBACK_PROMPTS);
+          setSelectedPromptIndex(0);
+          setSelectedPrompt(FALLBACK_PROMPTS[0] as any);
+        }
+      } catch (e) {
+        console.warn("Prefetch generateTasks falhou, usando fallback.", e);
+        if (mounted) {
+          setPrompts(FALLBACK_PROMPTS);
+          setSelectedPromptIndex(0);
+          setSelectedPrompt(FALLBACK_PROMPTS[0] as any);
+        }
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const sendToBackend = async () => {
     if (!audioBlob) return;
 
     try {
       setIsUploading(true);
+      // Garante que o microfone está liberado durante a análise
+      cleanupStreams();
       const result = await AudioService.uploadAudio(audioBlob, {
+        // send the selected prompt text as the target (backend will use this to evaluate)
         targetWord: selectedPrompt?.text,
         provider: "gemini",
         mimeType: audioBlob.type || "audio/ogg",
@@ -164,44 +251,76 @@ export default function FluenciaVerbalPage() {
     }
   };
 
+  const discardAudio = () => {
+    // allow user to cancel/discard after a recording finished
+    setAudioURL(null);
+    setAudioBlob(null);
+    setProcessingResult(null);
+    setElapsed(0);
+  };
+
   const progress = Math.min(elapsed / MAX_SECONDS, 1);
 
   return (
     <div className={styles.container}>
       <div className={styles.card}>
-        <h1 className={styles.title}>Leitura Rápida / Fluência Verbal</h1>
-        <p className={styles.subtitle}>
-          Pressione o microfone e leia o texto abaixo. O teste encerra em {MAX_SECONDS}s.
-        </p>
+        <div>
+          <h1 className={styles.title}>{ACTIVITY_LABEL}</h1>
+          <p className={styles.subtitle}>
+            Pressione o microfone e leia o texto abaixo. O teste encerra em {MAX_SECONDS}s.
+          </p>
+        </div>
+
+        {/* Texto alvo em destaque, acima do botão de gravação */}
+        {selectedPrompt && (
+          <div className={`${styles.prompt} ${styles.promptOpen}`}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h2 className={styles.promptTitle} style={{ margin: 0 }}>{selectedPrompt.title || "Tarefa"}</h2>
+              <small style={{ color: "#666" }}>
+                {selectedPromptIndex !== null ? `Item ${selectedPromptIndex + 1} de ${prompts && prompts.length ? prompts.length : FALLBACK_PROMPTS.length}` : ""}
+              </small>
+            </div>
+            <p className={styles.promptBody}>{selectedPrompt.text}</p>
+            {selectedPrompt.instructions && <p className={styles.promptBody} style={{ fontStyle: "italic", color: "#222" }}>{selectedPrompt.instructions}</p>}
+          </div>
+        )}
 
         <button
           className={`${styles.micButton} ${isRecording ? styles.micActive : ""}`}
           onClick={toggleRecording}
+          disabled={isUploading}
+          title={isUploading ? "Aguardando análise" : undefined}
         >
-          <span>{isRecording ? "Gravando..." : "Iniciar"}</span>
+          <span>{isRecording ? "Parar" : "Iniciar"}</span>
         </button>
 
-        <div className={styles.timer}>{mmss(elapsed)}</div>
-
-        {selectedPrompt && isRecording && (
-          <div className={styles.prompt}>
-            <h2>{selectedPrompt.title}</h2>
-            <p>{selectedPrompt.text}</p>
+        {isRecording && (
+          <div className={styles.actions}>
+            <button className={styles.secondary} onClick={cancelRecording}>Cancelar</button>
           </div>
         )}
+
+        <div className={styles.timer}>{mmss(elapsed)}</div>
 
         {audioURL && (
           <>
             <audio controls src={audioURL} style={{ marginTop: 20 }} />
-
-            <button
-              className={styles.primary}
-              onClick={sendToBackend}
-              disabled={isUploading}
-              style={{ marginTop: 20 }}
-            >
-              {isUploading ? "Enviando..." : "Enviar para análise"}
-            </button>
+            <div className={styles.actions} style={{ marginTop: 12 }}>
+              <button
+                className={styles.secondary}
+                onClick={discardAudio}
+                disabled={isUploading}
+              >
+                Descartar
+              </button>
+              <button
+                className={styles.primary}
+                onClick={sendToBackend}
+                disabled={isUploading}
+              >
+                {isUploading ? "Enviando..." : "Enviar para análise"}
+              </button>
+            </div>
           </>
         )}
 
