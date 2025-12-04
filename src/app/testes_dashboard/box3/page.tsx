@@ -4,41 +4,43 @@ import { useEffect, useRef, useState } from "react";
 import AudioService from "@/services/AudioService";
 import styles from "./page.module.css";
 
-const MAX_SECONDS = 30; //tempo do teste
+const MAX_SECONDS = 30;
 
-export default function FluenciaVerbalPage() {
+export default function LeituraPseudoPalavrasPage() {
   const [isRecording, setIsRecording] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [audioURL, setAudioURL] = useState<string | null>(null);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [processingResult, setProcessingResult] = useState<any>(null);
   const [isUploading, setIsUploading] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<number | null>(null);
+  const cancelRef = useRef<boolean>(false);
 
-  const PROMPTS = [
+  const ACTIVITY_KEY = "pseudo_palavras";
+  const ACTIVITY_LABEL = "Leitura de Palavras e Pseudopalavras";
+
+  const FALLBACK_PROMPTS = [
     {
       title: "A Viagem de Naro",
-      text:
-        "Naro pegou o mapa e saiu cedo. Passou pela ponte, viu um lago e encontrou uma brinela azul no caminho...",
+      text: "Naro pegou o mapa e saiu cedo. Passou pela ponte...",
     },
     {
       title: "O Jardim de Zefa",
-      text:
-        "Zefa cuidava das flores, dos vasos e dos belinhos. Certo dia, apareceu um grupel colorido entre as folhas...",
+      text: "Zefa cuidava das flores, dos vasos e dos belinhos...",
     },
     {
       title: "O Menino e o Valtor",
-      text:
-        "O menino subiu na bicicleta e pedalou até o valtor. Lá encontrou uma ponça e pulou rindo...",
+      text: "O menino subiu na bicicleta e pedalou até o valtor...",
     },
   ];
-  
-  const [selectedPrompt, setSelectedPrompt] =
-    useState<{ title: string; text: string } | null>(null);
+
+  const [prompts, setPrompts] = useState<any[]>([]);
+  const [selectedPrompt, setSelectedPrompt] = useState<any>(null);
 
   const mmss = (s: number) => {
     const m = Math.floor(s / 60).toString().padStart(2, "0");
@@ -64,15 +66,59 @@ export default function FluenciaVerbalPage() {
     }
   };
 
+  // ===============================
+  // FETCH DE PROMPTS (IA ou fallback)
+  // ===============================
+  useEffect(() => {
+    let mounted = true;
+
+    (async () => {
+      try {
+        const res = await AudioService.generateTasks(ACTIVITY_KEY, 5, {
+          include_meta: true,
+          use_ai: true,
+        });
+
+        const items = Array.isArray(res?.items) ? res.items : [];
+        if (mounted && items.length) {
+          setPrompts(items);
+          setSelectedPrompt(items[0]);
+        } else {
+          setPrompts(FALLBACK_PROMPTS);
+          setSelectedPrompt(FALLBACK_PROMPTS[0]);
+        }
+      } catch {
+        if (mounted) {
+          setPrompts(FALLBACK_PROMPTS);
+          setSelectedPrompt(FALLBACK_PROMPTS[0]);
+        }
+      }
+    })();
+
+    return () => {
+      mounted = false;
+      stopTimer();
+      cleanupStreams();
+    };
+  }, []);
+
+  // ===============================
+  // GRAVAÇÃO DE ÁUDIO + MÍDIA
+  // ===============================
   const startRecording = async () => {
     try {
       setErrorMsg(null);
       setAudioURL(null);
       setAudioBlob(null);
+      setProcessingResult(null);
       chunksRef.current = [];
 
-      const idx = Math.floor(Math.random() * PROMPTS.length);
-      setSelectedPrompt(PROMPTS[idx]);
+      // Se ainda não há prompt, escolhe um
+      if (!selectedPrompt) {
+        const pool = prompts.length ? prompts : FALLBACK_PROMPTS;
+        const idx = Math.floor(Math.random() * pool.length);
+        setSelectedPrompt(pool[idx]);
+      }
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
@@ -86,39 +132,44 @@ export default function FluenciaVerbalPage() {
         "audio/wav",
         ""
       ];
-      const supported = MIME_CANDIDATES.find(m => !m || MediaRecorder.isTypeSupported(m)) || "";
+      const supported = MIME_CANDIDATES.find((m) => !m || MediaRecorder.isTypeSupported(m)) || "";
       const mimeType = supported || "audio/webm";
 
-      let mr: MediaRecorder;
+      let recorder: MediaRecorder;
+
       try {
-        mr = supported
+        recorder = supported
           ? new MediaRecorder(stream, { mimeType })
           : new MediaRecorder(stream);
       } catch {
-        throw new Error("Formato de gravação não suportado.");
+        throw new Error("Formato de gravação não suportado pelo navegador.");
       }
 
-      mediaRecorderRef.current = mr;
+      mediaRecorderRef.current = recorder;
 
-      mr.ondataavailable = (e) => {
+      recorder.ondataavailable = (e) => {
         if (e.data.size > 0) chunksRef.current.push(e.data);
       };
 
-      mr.onstop = () => {
+      recorder.onstop = () => {
+        if (cancelRef.current) {
+          cancelRef.current = false;
+          chunksRef.current = [];
+          return;
+        }
+
         const finalMime = mimeType.split(";")[0] || "audio/webm";
         const blob = new Blob(chunksRef.current, { type: finalMime });
         setAudioBlob(blob);
         setAudioURL(URL.createObjectURL(blob));
       };
 
-      mr.start(100);
+      recorder.start(100);
       setIsRecording(true);
       setElapsed(0);
       startTimer();
-    } catch (err: any) {
-      let msg = "Não foi possível iniciar a gravação.";
-      if (err?.name === "NotAllowedError") msg = "Permissão negada.";
-      setErrorMsg(msg);
+    } catch {
+      setErrorMsg("Erro ao iniciar gravação.");
       cleanupStreams();
     }
   };
@@ -126,31 +177,13 @@ export default function FluenciaVerbalPage() {
   const stopRecording = (auto = false) => {
     stopTimer();
     setIsRecording(false);
-    mediaRecorderRef.current?.state === "recording" &&
+
+    if (mediaRecorderRef.current?.state === "recording")
       mediaRecorderRef.current.stop();
+
     cleanupStreams();
+
     if (auto) setElapsed(MAX_SECONDS);
-  };
-
-  const sendToBackend = async () => {
-    if (!audioBlob) return;
-    try {
-      setIsUploading(true);
-      await AudioService.uploadAudio(audioBlob, {
-        targetWord: selectedPrompt?.text,
-        provider: "gemini",
-        mimeType: audioBlob.type || "audio/webm",
-      });
-    } catch {
-      setErrorMsg("Erro ao enviar áudio.");
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const toggleRecording = async () => {
-    if (isRecording) stopRecording();
-    else await startRecording();
   };
 
   const cleanupStreams = () => {
@@ -161,26 +194,46 @@ export default function FluenciaVerbalPage() {
     }
   };
 
-  useEffect(() => {
-    return () => {
-      stopTimer();
+  // ===============================
+  // ENVIO PARA BACKEND (IA)
+  // ===============================
+  const sendToBackend = async () => {
+    if (!audioBlob) return;
+
+    try {
+      setIsUploading(true);
       cleanupStreams();
-    };
-  }, []);
+
+      const result = await AudioService.uploadAudio(audioBlob, {
+        targetWord: selectedPrompt?.text,
+        provider: "gemini",
+        mimeType: audioBlob.type || "audio/ogg",
+      });
+
+      setProcessingResult(result.data);
+    } catch {
+      setErrorMsg("Erro ao enviar áudio para análise.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const progress = Math.min(elapsed / MAX_SECONDS, 1);
 
+  // ===============================
+  // RENDER
+  // ===============================
   return (
     <div className={styles.container}>
       <div className={styles.card}>
-        <h1 className={styles.title}>Leitura de Palavras e Pseudopalavras</h1>
+        <h1 className={styles.title}>{ACTIVITY_LABEL}</h1>
         <p className={styles.subtitle}>
           Pressione o microfone e leia o texto proposto.
         </p>
 
         <button
           className={`${styles.micButton} ${isRecording ? styles.micActive : ""}`}
-          onClick={toggleRecording}
+          onClick={() => (isRecording ? stopRecording() : startRecording())}
         >
           {isRecording ? "Gravando..." : "Iniciar"}
         </button>
@@ -212,6 +265,7 @@ export default function FluenciaVerbalPage() {
               setAudioURL(null);
               setAudioBlob(null);
               setSelectedPrompt(null);
+              setProcessingResult(null);
             }}
           >
             Recomeçar
@@ -219,9 +273,10 @@ export default function FluenciaVerbalPage() {
 
           {audioURL && (
             <>
-              <a className={styles.primary} href={audioURL} download="fluencia.webm">
+              <a className={styles.primary} href={audioURL} download="teste3.webm">
                 Baixar Áudio
               </a>
+
               <button
                 className={styles.primary}
                 onClick={sendToBackend}
@@ -232,6 +287,15 @@ export default function FluenciaVerbalPage() {
             </>
           )}
         </div>
+
+        {processingResult && (
+          <div className={styles.resultBox}>
+            <h3>Resultado da Análise</h3>
+            <p><strong>Transcrição:</strong> {processingResult.transcription}</p>
+            <p><strong>Pontuação:</strong> {processingResult.score}</p>
+            <p><strong>Mensagem:</strong> {processingResult.audioMessage}</p>
+          </div>
+        )}
 
         {errorMsg && <p className={styles.error}>{errorMsg}</p>}
       </div>

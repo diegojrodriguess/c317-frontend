@@ -16,6 +16,7 @@ export default function LoginPage() {
       const data = await AuthService.login(email, password);
 
       localStorage.setItem("token", data.access_token);
+      console.log(data.access_token);
       router.push("/dashboard");
     } catch (error) {
       console.error("Erro ao logar:", error);

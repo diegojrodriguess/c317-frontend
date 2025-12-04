@@ -6,78 +6,129 @@ import styles from "./page.module.css";
 
 const MAX_SECONDS = 30;
 
-export default function FluenciaVerbalPage() {
-  const [isRecording,setIsRecording]=useState(false);
-  const [elapsed,setElapsed]=useState(0);
-  const [errorMsg,setErrorMsg]=useState<string|null>(null);
-  const [audioURL,setAudioURL]=useState<string|null>(null);
-  const [audioBlob,setAudioBlob]=useState<Blob|null>(null);
-  const [isUploading,setIsUploading] = useState(false);
+export default function SilabasTravalLinguaPage() {
+  const [isRecording, setIsRecording] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const mediaRecorderRef = useRef<MediaRecorder|null>(null);
-  const streamRef = useRef<MediaStream|null>(null);
+  const [audioURL, setAudioURL] = useState<string | null>(null);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+
+  const [processingResult, setProcessingResult] = useState<any>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
-  const timerRef = useRef<number|null>(null);
+  const timerRef = useRef<number | null>(null);
+  const cancelRef = useRef(false);
 
-  const PROMPTS = [
+  const ACTIVITY_KEY = "silabas_e_traval";
+  const ACTIVITY_LABEL = "Repetição de Sílabas e Trava-línguas";
+
+  const FALLBACK_PROMPTS = [
     {
       title: "Sílabas Saltitantes",
-      text:
-        "Pa-pe-pi-po-pu, o papagaio pulou!  Ta-te-ti-to-tu, o tatu tropeçou!"
+      text: "Pa-pe-pi-po-pu, o papagaio pulou! Ta-te-ti-to-tu, o tatu tropeçou!"
     },
     {
       title: "O Rato e o Relojoeiro",
-      text:
-         "O rato roeu a roupa do rei de Roma, e o relojoeiro remendou rapidinho."
+      text: "O rato roeu a roupa do rei de Roma, e o relojoeiro remendou rapidinho."
     },
     {
       title: "Três Tigres",
-      text:
-        "Três tigres tristes tropeçaram no trigo..."
-    },
+      text: "Três tigres tristes tropeçaram no trigo..."
+    }
   ];
 
-  const [selectedPrompt,setSelectedPrompt] =
-    useState<{title:string;text:string}|null>(null);
+  const [prompts, setPrompts] = useState<any[]>([]);
+  const [selectedPrompt, setSelectedPrompt] = useState<any>(null);
 
-  const mmss = (s: number)=>{
-    const m = Math.floor(s/60).toString().padStart(2,"0");
-    const ss = Math.floor(s%60).toString().padStart(2,"0");
+  // ============================================================
+  // TIMER
+  // ============================================================
+  const mmss = (s: number) => {
+    const m = Math.floor(s / 60).toString().padStart(2, "0");
+    const ss = Math.floor(s % 60).toString().padStart(2, "0");
     return `${m}:${ss}`;
-  }
+  };
 
-  const startTimer=()=>{
+  const startTimer = () => {
     stopTimer();
-    timerRef.current=window.setInterval(()=>{
-      setElapsed(prev=>{
-        const next=prev+0.1;
-        if(next>=MAX_SECONDS) stopRecording(true);
+    timerRef.current = window.setInterval(() => {
+      setElapsed((prev) => {
+        const next = prev + 0.1;
+        if (next >= MAX_SECONDS) stopRecording(true);
         return next;
-      })
-    },100)
-  }
+      });
+    }, 100);
+  };
 
-  const stopTimer=()=>{
-    if(timerRef.current){
+  const stopTimer = () => {
+    if (timerRef.current) {
       clearInterval(timerRef.current);
-      timerRef.current=null;
+      timerRef.current = null;
     }
-  }
+  };
 
-  const startRecording=async()=>{
-    try{
+  // ============================================================
+  // LOAD PROMPTS (IA OU FALLBACK)
+  // ============================================================
+  useEffect(() => {
+    let mounted = true;
+
+    (async () => {
+      try {
+        const res = await AudioService.generateTasks(ACTIVITY_KEY, 5, {
+          include_meta: true,
+          use_ai: true,
+        });
+
+        const items = Array.isArray(res?.items) ? res.items : [];
+
+        if (mounted && items.length) {
+          setPrompts(items);
+          setSelectedPrompt(items[0]);
+        } else {
+          setPrompts(FALLBACK_PROMPTS);
+          setSelectedPrompt(FALLBACK_PROMPTS[0]);
+        }
+      } catch {
+        if (mounted) {
+          setPrompts(FALLBACK_PROMPTS);
+          setSelectedPrompt(FALLBACK_PROMPTS[0]);
+        }
+      }
+    })();
+
+    return () => {
+      mounted = false;
+      cleanupStreams();
+      stopTimer();
+    };
+  }, []);
+
+  // ============================================================
+  // GRAVAÇÃO
+  // ============================================================
+  const startRecording = async () => {
+    try {
       setErrorMsg(null);
       setAudioURL(null);
       setAudioBlob(null);
-      chunksRef.current=[];
+      setProcessingResult(null);
+      chunksRef.current = [];
 
-      const idx=Math.floor(Math.random()*PROMPTS.length);
-      setSelectedPrompt(PROMPTS[idx]);
+      if (!selectedPrompt) {
+        const pool = prompts.length ? prompts : FALLBACK_PROMPTS;
+        const idx = Math.floor(Math.random() * pool.length);
+        setSelectedPrompt(pool[idx]);
+      }
 
-      const stream=await navigator.mediaDevices.getUserMedia({audio:true});
-      streamRef.current=stream;
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
 
-      const MIME_CANDIDATES=[
+      const MIME_CANDIDATES = [
         "audio/webm;codecs=opus",
         "audio/webm",
         "audio/ogg;codecs=opus",
@@ -86,105 +137,114 @@ export default function FluenciaVerbalPage() {
         "audio/wav",
         ""
       ];
-      const supported=MIME_CANDIDATES.find(m=>!m||MediaRecorder.isTypeSupported(m))||"";
-      const mimeType=supported||"audio/webm";
+      const supported = MIME_CANDIDATES.find((m) => !m || MediaRecorder.isTypeSupported(m)) || "";
+      const mimeType = supported || "audio/webm";
 
-      let mr:MediaRecorder;
-      try{
-        mr=supported
-          ? new MediaRecorder(stream,{mimeType})
+      let recorder: MediaRecorder;
+
+      try {
+        recorder = supported
+          ? new MediaRecorder(stream, { mimeType })
           : new MediaRecorder(stream);
-      }catch{
-        throw new Error("Formato não suportado");
+      } catch {
+        throw new Error("Navegador não suporta gravação de áudio.");
       }
 
-      mediaRecorderRef.current=mr;
+      mediaRecorderRef.current = recorder;
 
-      mr.ondataavailable=e=>{
-        if(e.data.size>0) chunksRef.current.push(e.data);
-      }
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
 
-      mr.onstop=()=>{
-        const finalMime=mimeType.split(";")[0];
-        const blob=new Blob(chunksRef.current,{type:finalMime});
+      recorder.onstop = () => {
+        if (cancelRef.current) {
+          cancelRef.current = false;
+          return;
+        }
+
+        const finalMime = mimeType.split(";")[0];
+        const blob = new Blob(chunksRef.current, { type: finalMime });
         setAudioBlob(blob);
         setAudioURL(URL.createObjectURL(blob));
-      }
+      };
 
-      mr.start(100);
+      recorder.start(100);
+
       setIsRecording(true);
       setElapsed(0);
       startTimer();
-
-    }catch(err){
-      setErrorMsg("Erro ao iniciar.");
+    } catch {
+      setErrorMsg("Erro ao iniciar gravação.");
       cleanupStreams();
     }
-  }
+  };
 
-  const stopRecording=(auto=false)=>{
+  const stopRecording = (auto = false) => {
     stopTimer();
     setIsRecording(false);
 
-    mediaRecorderRef.current?.state==="recording" &&
+    if (mediaRecorderRef.current?.state === "recording") {
       mediaRecorderRef.current.stop();
+    }
 
     cleanupStreams();
-    if(auto) setElapsed(MAX_SECONDS);
-  }
 
-  const sendToBackend=async()=>{
-    if(!audioBlob) return;
-    try{
+    if (auto) setElapsed(MAX_SECONDS);
+  };
+
+  const cleanupStreams = () => {
+    mediaRecorderRef.current = null;
+
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+  };
+
+  // ============================================================
+  // ENVIO PARA IA
+  // ============================================================
+  const sendToBackend = async () => {
+    if (!audioBlob) return;
+
+    try {
       setIsUploading(true);
-      await AudioService.uploadAudio(audioBlob,{
+
+      const result = await AudioService.uploadAudio(audioBlob, {
         targetWord: selectedPrompt?.text,
-        provider:"gemini",
-        mimeType: audioBlob.type
+        provider: "gemini",
+        mimeType: audioBlob.type,
       });
-    }catch{
-      setErrorMsg("Erro ao enviar.");
-    }finally{
+
+      setProcessingResult(result.data);
+    } catch {
+      setErrorMsg("Erro ao enviar áudio.");
+    } finally {
       setIsUploading(false);
     }
-  }
+  };
 
-  const toggleRecording=()=>{
-    if(isRecording) stopRecording();
-    else startRecording();
-  }
+  const progress = Math.min(elapsed / MAX_SECONDS, 1);
 
-  const cleanupStreams=()=>{
-    if(streamRef.current){
-      streamRef.current.getTracks().forEach(t=>t.stop());
-      streamRef.current=null;
-    }
-    mediaRecorderRef.current=null;
-  }
-
-  useEffect(()=>()=>{
-    stopTimer();
-    cleanupStreams();
-  },[])
-
-  const progress=Math.min(elapsed/MAX_SECONDS,1);
-
-  return(
+  // ============================================================
+  // UI
+  // ============================================================
+  return (
     <div className={styles.container}>
       <div className={styles.card}>
 
-        <h1 className={styles.title}>Repetição de Sílabas e Trava-línguas</h1>
+        <h1 className={styles.title}>{ACTIVITY_LABEL}</h1>
 
         <button
-          className={`${styles.micButton} ${isRecording?styles.micActive:""}`}
-          onClick={toggleRecording}
+          className={`${styles.micButton} ${isRecording ? styles.micActive : ""}`}
+          onClick={() => (isRecording ? stopRecording() : startRecording())}
         >
-          {isRecording?"Gravando...":"Iniciar"}
+          {isRecording ? "Gravando..." : "Iniciar"}
         </button>
 
         <div className={styles.timer}>{mmss(elapsed)}</div>
 
-        <div className={`${styles.prompt} ${isRecording?styles.promptOpen:""}`}>
+        <div className={`${styles.prompt} ${isRecording ? styles.promptOpen : ""}`}>
           {selectedPrompt && (
             <>
               <h2 className={styles.promptTitle}>{selectedPrompt.title}</h2>
@@ -196,20 +256,20 @@ export default function FluenciaVerbalPage() {
         <div className={styles.progressTrack}>
           <div
             className={styles.progressFill}
-            style={{width:`${progress*100}%`}}
+            style={{ width: `${progress * 100}%` }}
           />
         </div>
 
         <div className={styles.actions}>
-
           <button
             className={styles.secondary}
-            onClick={()=>{
+            onClick={() => {
               stopRecording();
               setElapsed(0);
               setAudioURL(null);
               setAudioBlob(null);
               setSelectedPrompt(null);
+              setProcessingResult(null);
             }}
           >
             Recomeçar
@@ -217,7 +277,7 @@ export default function FluenciaVerbalPage() {
 
           {audioURL && (
             <>
-              <a className={styles.primary} href={audioURL} download="audio.webm">
+              <a className={styles.primary} href={audioURL} download="silabas.webm">
                 Baixar Áudio
               </a>
 
@@ -226,12 +286,20 @@ export default function FluenciaVerbalPage() {
                 onClick={sendToBackend}
                 disabled={isUploading}
               >
-                {isUploading?"Enviando...":"Enviar para análise"}
+                {isUploading ? "Enviando..." : "Enviar para análise"}
               </button>
             </>
           )}
-
         </div>
+
+        {processingResult && (
+          <div className={styles.resultBox}>
+            <h3>Resultado da Análise</h3>
+            <p><strong>Transcrição:</strong> {processingResult.transcription}</p>
+            <p><strong>Pontuação:</strong> {processingResult.score}</p>
+            <p><strong>Mensagem:</strong> {processingResult.audioMessage}</p>
+          </div>
+        )}
 
         {errorMsg && <p className={styles.error}>{errorMsg}</p>}
       </div>
