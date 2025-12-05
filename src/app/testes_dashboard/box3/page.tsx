@@ -14,6 +14,7 @@ export default function LeituraPseudoPalavrasPage() {
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [processingResult, setProcessingResult] = useState<any>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [processingResult, setProcessingResult] = useState<any>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -186,6 +187,32 @@ export default function LeituraPseudoPalavrasPage() {
     if (auto) setElapsed(MAX_SECONDS);
   };
 
+<<<<<<< Updated upstream
+=======
+  const sendToBackend = async () => {
+    if (!audioBlob) return;
+    try {
+      setIsUploading(true);
+      const result = await AudioService.uploadAudio(audioBlob, {
+        targetWord: selectedPrompt?.text,
+        provider: "gemini",
+        mimeType: audioBlob.type || "audio/webm",
+      });
+      // Normalize payload to ensure fields are available
+      setProcessingResult(result);
+    } catch {
+      setErrorMsg("Erro ao enviar áudio.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const toggleRecording = async () => {
+    if (isRecording) stopRecording();
+    else await startRecording();
+  };
+
+>>>>>>> Stashed changes
   const cleanupStreams = () => {
     mediaRecorderRef.current = null;
     if (streamRef.current) {
@@ -291,9 +318,21 @@ export default function LeituraPseudoPalavrasPage() {
         {processingResult && (
           <div className={styles.resultBox}>
             <h3>Resultado da Análise</h3>
+<<<<<<< Updated upstream
             <p><strong>Transcrição:</strong> {processingResult.transcription}</p>
             <p><strong>Pontuação:</strong> {processingResult.score}</p>
             <p><strong>Mensagem:</strong> {processingResult.audioMessage}</p>
+=======
+            <p><strong>Transcrição:</strong> {processingResult.transcription || "-"}</p>
+            <p><strong>Pontuação:</strong> {typeof processingResult.score === "number" ? processingResult.score : (processingResult.score ?? "-")}</p>
+            {typeof processingResult.match !== "undefined" && (
+              <p><strong>Match:</strong> {String(processingResult.match)}</p>
+            )}
+            {processingResult.evaluation && (
+              <p><strong>Avaliação:</strong> {processingResult.evaluation}</p>
+            )}
+            <p><strong>Feedback:</strong> {processingResult.feedback || processingResult.message || processingResult.audioMessage || "-"}</p>
+>>>>>>> Stashed changes
           </div>
         )}
 

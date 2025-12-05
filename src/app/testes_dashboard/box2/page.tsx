@@ -14,6 +14,7 @@ export default function FonemasPage() {
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [processingResult, setProcessingResult] = useState<any>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [processingResult, setProcessingResult] = useState<any>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -183,15 +184,23 @@ export default function FonemasPage() {
 
     try {
       setIsUploading(true);
+<<<<<<< Updated upstream
       cleanupStreams();
 
+=======
+>>>>>>> Stashed changes
       const result = await AudioService.uploadAudio(audioBlob, {
         targetWord: selectedPrompt?.text,
         provider: "gemini",
         mimeType: audioBlob.type || "audio/ogg",
       });
+<<<<<<< Updated upstream
 
       setProcessingResult(result.data);
+=======
+      // Some backends wrap the payload in { data: ... }; normalize it
+      setProcessingResult((result as any)?.data ?? result);
+>>>>>>> Stashed changes
     } catch {
       setErrorMsg("Erro ao enviar áudio para análise.");
     } finally {
@@ -265,6 +274,18 @@ export default function FonemasPage() {
             <p><strong>Transcrição:</strong> {processingResult.transcription}</p>
             <p><strong>Pontuação:</strong> {processingResult.score}</p>
             <p><strong>Mensagem:</strong> {processingResult.audioMessage}</p>
+          </div>
+        )}
+
+        {processingResult && (
+          <div className={styles.resultBox}>
+            <h3>Resultado da Análise</h3>
+            <p><strong>Transcrição:</strong> {processingResult.transcription || "-"}</p>
+            <p><strong>Pontuação:</strong> {typeof processingResult.score === "number" ? processingResult.score : (processingResult.score ?? "-")}</p>
+            {typeof processingResult.match !== "undefined" && (
+              <p><strong>Match:</strong> {String(processingResult.match)}</p>
+            )}
+            <p><strong>Feedback:</strong> {processingResult.feedback || processingResult.message || processingResult.audioMessage || "-"}</p>
           </div>
         )}
 
