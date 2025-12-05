@@ -14,6 +14,7 @@ export default function FluenciaVerbalPage() {
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [processingResult, setProcessingResult] = useState<any>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [recordingSupported, setRecordingSupported] = useState<boolean>(true);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -75,6 +76,18 @@ export default function FluenciaVerbalPage() {
       chunksRef.current = [];
       if (isUploading) {
         setErrorMsg("Aguarde a análise terminar antes de gravar novamente.");
+        return;
+      }
+
+      // Verificações de suporte do navegador
+      if (!navigator?.mediaDevices?.getUserMedia) {
+        setErrorMsg("Seu navegador não suporta captura de áudio (getUserMedia). Tente Chrome ou Firefox.");
+        setRecordingSupported(false);
+        return;
+      }
+      if (typeof MediaRecorder === "undefined") {
+        setErrorMsg("Seu navegador não suporta gravação de áudio (MediaRecorder). Tente Chrome ou Firefox ou envie um arquivo de áudio abaixo.");
+        setRecordingSupported(false);
         return;
       }
 
@@ -145,7 +158,14 @@ export default function FluenciaVerbalPage() {
         setAudioBlob(blob);
       };
 
-      recorder.start(100);
+      // Inicia sem timeslice; se falhar, tenta com timeslice
+      try {
+        recorder.start();
+      } catch (e) {
+        try { recorder.start(100); } catch (e2) {
+          throw new Error("Não foi possível iniciar a gravação.");
+        }
+      }
       setIsRecording(true);
       setElapsed(0);
       startTimer();
@@ -278,7 +298,7 @@ export default function FluenciaVerbalPage() {
           <div className={`${styles.prompt} ${styles.promptOpen}`}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <h2 className={styles.promptTitle} style={{ margin: 0 }}>{selectedPrompt.title || "Tarefa"}</h2>
-              <small style={{ color: "#666" }}>
+              <small style={{ color: "#090909ff" }}>
                 {selectedPromptIndex !== null ? `Item ${selectedPromptIndex + 1} de ${prompts && prompts.length ? prompts.length : FALLBACK_PROMPTS.length}` : ""}
               </small>
             </div>
@@ -303,6 +323,24 @@ export default function FluenciaVerbalPage() {
         )}
 
         <div className={styles.timer}>{mmss(elapsed)}</div>
+
+        {/* Fallback: Upload manual de arquivo quando a gravação não é suportada */}
+        {!recordingSupported && !audioBlob && (
+          <div className={styles.actions} style={{ marginTop: 12 }}>
+            <input
+              type="file"
+              accept="audio/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  setAudioBlob(file);
+                  setAudioURL(URL.createObjectURL(file));
+                  setErrorMsg(null);
+                }
+              }}
+            />
+          </div>
+        )}
 
         {audioURL && (
           <>

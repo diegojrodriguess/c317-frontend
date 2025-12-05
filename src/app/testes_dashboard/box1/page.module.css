@@ -140,8 +140,8 @@
 .resultBox {
   margin-top: 1rem;
   text-align: left;
-  background: #0b1f20;        /* mais escuro para combinar com o tema */
-  color: #0b1f20;             /* texto claro para contraste */
+  background: #a53816;        /* fundo ainda mais escuro para contraste elevado */
+  color: #eaf7f8;             /* texto principal bem claro */
   border: 1px solid #0c2021;
   border-radius: 12px;
   padding: 1rem 1.25rem;
@@ -149,13 +149,19 @@
 }
 .resultBox h3 {
   margin: 0 0 .5rem 0;
-  color: #d6eff0;
+  color: #ffffff;             /* título em branco puro */
 }
 .resultBox p {
   margin: .25rem 0;
+  color: #eaf7f8;             /* força alto contraste no texto */
 }
 .resultBox strong {
-  color: #ffffff;
+  color: #ffffff;             /* rótulos em branco para destacar */
+}
+.resultBox a,
+.resultBox code,
+.resultBox span {
+  color: #f6ffff;             /* elementos inline também com alto contraste */
 }
 
 .prompt {

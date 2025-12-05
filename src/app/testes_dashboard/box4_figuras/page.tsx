@@ -16,6 +16,20 @@ export default function FluenciaVerbalPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [processingResult, setProcessingResult] = useState<any>(null);
 
+  // Derive evaluation when backend doesn't provide one
+  const deriveEvaluation = (res: any) => {
+    const explicit = res?.evaluation || res?.assessment;
+    if (explicit) return explicit;
+    const s = res?.score;
+    if (typeof s === "number") {
+      if (s >= 80) return "Excelente";
+      if (s >= 60) return "Bom";
+      if (s >= 40) return "Regular";
+      return "Precisa melhorar";
+    }
+    return undefined;
+  };
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -243,9 +257,7 @@ export default function FluenciaVerbalPage() {
             {typeof processingResult.match !== "undefined" && (
               <p><strong>Match:</strong> {String(processingResult.match)}</p>
             )}
-            {processingResult.evaluation && (
-              <p><strong>Avaliação:</strong> {processingResult.evaluation}</p>
-            )}
+            <p><strong>Avaliação:</strong> {deriveEvaluation(processingResult) || "-"}</p>
             <p><strong>Feedback:</strong> {processingResult.feedback || processingResult.message || processingResult.audioMessage || "-"}</p>
           </div>
         )}

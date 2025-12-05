@@ -9,14 +9,13 @@ const MAX_SECONDS = 30;
 export default function FrasesCurtasPage() {
   const [isRecording, setIsRecording] = useState(false);
   const [elapsed, setElapsed] = useState(0);
-<<<<<<< Updated upstream
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-=======
-  const [errorMsg, setErrorMsg] = useState<string|null>(null);
-  const [audioURL, setAudioURL] = useState<string|null>(null);
-  const [audioBlob, setAudioBlob] = useState<Blob|null>(null);
-  const [isUploading,setIsUploading] = useState(false);
+
+  const [audioURL, setAudioURL] = useState<string | null>(null);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+
   const [processingResult, setProcessingResult] = useState<any>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Derive evaluation when backend doesn't provide one
   const deriveEvaluation = (res: any) => {
@@ -31,13 +30,8 @@ export default function FrasesCurtasPage() {
     }
     return undefined;
   };
->>>>>>> Stashed changes
 
-  const [audioURL, setAudioURL] = useState<string | null>(null);
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
-
-  const [processingResult, setProcessingResult] = useState<any>(null);
-  const [isUploading, setIsUploading] = useState(false);
+  
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -233,29 +227,15 @@ export default function FrasesCurtasPage() {
 
     try {
       setIsUploading(true);
-<<<<<<< Updated upstream
-      cleanupStreams();
-
       const result = await AudioService.uploadAudio(audioBlob, {
-=======
-      const result = await AudioService.uploadAudio(audioBlob,{
->>>>>>> Stashed changes
         targetWord: selectedPrompt?.text,
         provider: "gemini",
         mimeType: audioBlob.type,
       });
-<<<<<<< Updated upstream
-
-      setProcessingResult(result.data);
+      setProcessingResult(result);
     } catch {
       setErrorMsg("Erro ao enviar áudio.");
     } finally {
-=======
-      setProcessingResult(result);
-    }catch{
-      setErrorMsg("Erro ao enviar.");
-    }finally{
->>>>>>> Stashed changes
       setIsUploading(false);
     }
   };
@@ -331,11 +311,6 @@ export default function FrasesCurtasPage() {
         {processingResult && (
           <div className={styles.resultBox}>
             <h3>Resultado da Análise</h3>
-<<<<<<< Updated upstream
-            <p><strong>Transcrição:</strong> {processingResult.transcription}</p>
-            <p><strong>Pontuação:</strong> {processingResult.score}</p>
-            <p><strong>Mensagem:</strong> {processingResult.audioMessage}</p>
-=======
             <p><strong>Transcrição:</strong> {processingResult.transcription || "-"}</p>
             <p><strong>Pontuação:</strong> {typeof processingResult.score === "number" ? processingResult.score : (processingResult.score ?? "-")}</p>
             {typeof processingResult.match !== "undefined" && (
@@ -343,7 +318,6 @@ export default function FrasesCurtasPage() {
             )}
             <p><strong>Avaliação:</strong> {deriveEvaluation(processingResult) || "-"}</p>
             <p><strong>Feedback:</strong> {processingResult.feedback || processingResult.message || processingResult.audioMessage || "-"}</p>
->>>>>>> Stashed changes
           </div>
         )}
 
