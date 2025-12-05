@@ -242,7 +242,9 @@ export default function FluenciaVerbalPage() {
         provider: "gemini",
         mimeType: audioBlob.type || "audio/ogg",
       });
-      setProcessingResult(result.data);
+      // Backend returns a JSON object with fields like transcription, score and message/audioMessage.
+      // Use it directly (no nested .data) and normalize feedback for UI.
+      setProcessingResult(result);
     } catch (err) {
       setErrorMsg("Erro ao enviar áudio.");
       console.error(err);
@@ -329,7 +331,8 @@ export default function FluenciaVerbalPage() {
             <h3>Resultado da Análise</h3>
             <p><strong>Transcrição:</strong> {processingResult.transcription}</p>
             <p><strong>Pontuação:</strong> {processingResult.score}</p>
-            <p><strong>Mensagem:</strong> {processingResult.audioMessage}</p>
+            {/* Show feedback message for the patient; backend may return either `message` or `audioMessage` */}
+            <p><strong>Feedback:</strong> {processingResult.feedback || processingResult.message || processingResult.audioMessage || "-"}</p>
           </div>
         )}
 

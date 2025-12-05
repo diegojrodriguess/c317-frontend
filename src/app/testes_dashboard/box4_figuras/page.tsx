@@ -14,6 +14,7 @@ export default function FluenciaVerbalPage() {
   const [audioURL, setAudioURL] = useState<string | null>(null);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [processingResult, setProcessingResult] = useState<any>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -127,11 +128,12 @@ export default function FluenciaVerbalPage() {
     if (!audioBlob) return;
     try {
       setIsUploading(true);
-      await AudioService.uploadAudio(audioBlob, {
+      const result = await AudioService.uploadAudio(audioBlob, {
         targetWord: selectedImage?.title,
         provider: "gemini",
         mimeType: audioBlob.type,
       });
+      setProcessingResult(result);
     } catch {
       setErrorMsg("Erro ao enviar.");
     } finally {
@@ -165,7 +167,7 @@ export default function FluenciaVerbalPage() {
     <div className={styles.container}>
       <div className={styles.card}>
 
-        <h1 className={styles.title}>Repetição de Sílabas e Trava-línguas</h1>
+        <h1 className={styles.title}>Teste de nomeaçao de figuras</h1>
 
         <button
           className={`${styles.micButton} ${isRecording ? styles.micActive : ""}`}
@@ -232,6 +234,21 @@ export default function FluenciaVerbalPage() {
             </>
           )}
         </div>
+
+        {processingResult && (
+          <div className={styles.resultBox}>
+            <h3>Resultado da Análise</h3>
+            <p><strong>Transcrição:</strong> {processingResult.transcription || "-"}</p>
+            <p><strong>Pontuação:</strong> {typeof processingResult.score === "number" ? processingResult.score : (processingResult.score ?? "-")}</p>
+            {typeof processingResult.match !== "undefined" && (
+              <p><strong>Match:</strong> {String(processingResult.match)}</p>
+            )}
+            {processingResult.evaluation && (
+              <p><strong>Avaliação:</strong> {processingResult.evaluation}</p>
+            )}
+            <p><strong>Feedback:</strong> {processingResult.feedback || processingResult.message || processingResult.audioMessage || "-"}</p>
+          </div>
+        )}
 
         {errorMsg && <p className={styles.error}>{errorMsg}</p>}
       </div>

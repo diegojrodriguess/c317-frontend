@@ -44,7 +44,9 @@ class AudioService {
       throw new Error(errText || `Falha ao enviar áudio (${response.status})`);
     }
 
-    return response.json();
+    const json = await response.json();
+    // Normalize to flat payload consumers expect
+    return (json && json.data) ? json.data : json;
   }
 
   static async getHistory(userId?: string) {

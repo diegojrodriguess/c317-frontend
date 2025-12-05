@@ -136,6 +136,28 @@
   font-weight: 600;
 }
 
+/* resposta da IA em tom escuro */
+.resultBox {
+  margin-top: 1rem;
+  text-align: left;
+  background: #0b1f20;        /* mais escuro para combinar com o tema */
+  color: #0b1f20;             /* texto claro para contraste */
+  border: 1px solid #0c2021;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 8px 24px rgba(0,0,0,.18);
+}
+.resultBox h3 {
+  margin: 0 0 .5rem 0;
+  color: #d6eff0;
+}
+.resultBox p {
+  margin: .25rem 0;
+}
+.resultBox strong {
+  color: #ffffff;
+}
+
 .prompt {
   max-height: 0;
   overflow: hidden;
@@ -164,12 +186,13 @@
   margin: 0 0 .35rem 0;
   font-weight: 800;
   color: #143d3b;
-  font-size: 1.3rem;
+  font-size: 1.6rem;            /* maior para dar destaque */
 }
 
 .promptBody {
   margin: 0;
   color: #000;
-  line-height: 1.8;
-  font-size: 1.15rem;
+  line-height: 1.9;             /* mais espaçamento para leitura */
+  font-size: 1.35rem;           /* frase principal maior */
+  font-weight: 700;             /* mais ênfase */
 }

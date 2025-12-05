@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import AudioService from "@/services/AudioService";
+import { API_BASE_URL } from "@/services/config";
 import styles from "./page.module.css";
 
 type Consultation = {
@@ -72,9 +73,17 @@ export default function HistoryPage() {
               <div className={styles.row}>
                 <span className={styles.label}>PDF:</span>
                 {it.pdfPath ? (
-                  <a href={it.pdfPath} target="_blank" rel="noreferrer" className={styles.link}>
-                    Abrir relatório
-                  </a>
+                  (() => {
+                    const isAbsolute = /^https?:\/\//i.test(it.pdfPath);
+                    const href = isAbsolute
+                      ? it.pdfPath
+                      : `${API_BASE_URL}${it.pdfPath.startsWith('/') ? '' : '/'}${it.pdfPath}`;
+                    return (
+                      <a href={href} target="_blank" rel="noreferrer" className={styles.link}>
+                        Abrir relatório
+                      </a>
+                    );
+                  })()
                 ) : (
                   <span>-</span>
                 )}
