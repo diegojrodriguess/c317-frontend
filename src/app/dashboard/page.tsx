@@ -36,7 +36,7 @@ export default function Dashboard() {
         <header className={styles.header}>
           <div className={styles.welcome}>
             <h2>Bem Vindo</h2>
-            <p className={styles.username}>{userName}.</p>
+            <p className={styles.username}>{userName}</p>
           </div>
           {/* <button onClick={handleLogout} className={styles.logoutButton}>
             Logout
