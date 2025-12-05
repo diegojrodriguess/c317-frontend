@@ -4,9 +4,25 @@ import styles from "./page.module.css";
 import { FaUserCircle, FaHeart } from "react-icons/fa";
 import RouteGuard from "@/components/RouteGuard";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function Dashboard() {
    const router = useRouter();
+
+   const [userName, setUserName] = useState("");
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setUserName(parsedUser.name || "");
+      } catch (err) {
+        console.error("Erro ao ler user do localStorage:", err);
+      }
+    }
+  }, []);
 
   // const handleLogout = () => {
   //   localStorage.removeItem("token");
@@ -14,13 +30,13 @@ export default function Dashboard() {
   // };
 
   return (
-    // <RouteGuard>
+    <RouteGuard>
       <div className={styles.container}>
         {/* Header */}
         <header className={styles.header}>
           <div className={styles.welcome}>
             <h2>Bem Vindo</h2>
-            <p className={styles.username}>Xxxxxxxxxxx.</p>
+            <p className={styles.username}>{userName}.</p>
           </div>
           {/* <button onClick={handleLogout} className={styles.logoutButton}>
             Logout
@@ -78,6 +94,6 @@ export default function Dashboard() {
           </div>
         </main>
       </div>
-    // </RouteGuard>
+    </RouteGuard>
   );
 }
